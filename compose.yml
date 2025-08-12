@@ -112,6 +112,7 @@ services:
       "
     networks:
       - rag-network
+    user: "50000:0"
 
   ollama:
     image: ollama/ollama:0.11.2
