@@ -3,15 +3,15 @@ from datetime import datetime, timedelta
 import psycopg2
 import requests
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.decorators import task
 
-
+@task
 def hello_world():
     """Simple hello world function."""
     print("Hello from Airflow! Week 1 is working.")
     return "success"
 
-
+@task
 def check_services():
     """Check if other services are accessible."""
     try:
@@ -49,19 +49,6 @@ dag = DAG(
     schedule=None,
     catchup=False,
     tags=["week1", "testing"],
-)
-
-# Define tasks
-hello_task = PythonOperator(
-    task_id="hello_world",
-    python_callable=hello_world,
-    dag=dag,
-)
-
-service_check_task = PythonOperator(
-    task_id="check_services",
-    python_callable=check_services,
-    dag=dag,
 )
 
 # Set task dependencies
