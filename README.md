@@ -46,7 +46,7 @@ By the end of this course, you'll have your own AI research assistant and the sk
 ```bash
 # 1. Clone and setup
 git clone <repository-url>
-cd zero_to_RAG
+cd arxiv-paper-curator
 uv sync
 
 # 2. Start all services
@@ -54,6 +54,30 @@ docker compose up --build -d
 
 # 3. Verify everything works
 curl http://localhost:8000/health
+```
+
+### **📚 Weekly Learning Path**
+
+| Week | Topic | Blog Post | Code Release |
+|------|-------|-----------|--------------|
+| **Week 0** | The Mother of AI project - 6 phases | [The Mother of AI project](https://jamwithai.substack.com/p/the-mother-of-ai-project) | - |
+| **Week 1** | Infrastructure Foundation | [The Infrastructure That Powers RAG Systems](https://jamwithai.substack.com/p/the-infrastructure-that-powers-rag) | [week1.0](https://github.com/jamwithai/arxiv-paper-curator/releases/tag/week1.0) |
+| **Week 2** | Data Ingestion Pipeline | [Building Data Ingestion Pipelines for RAG](https://jamwithai.substack.com/p/bringing-your-rag-system-to-life) | [week2.0](https://github.com/jamwithai/arxiv-paper-curator/releases/tag/week2.0) |
+| **Week 3** | Hybrid Search Implementation | _Coming Soon_ | _Coming Soon_ |
+| **Week 4** | Advanced Chunking & Retrieval | _Coming Soon_ | _Coming Soon_ |
+| **Week 5** | Full RAG Pipeline | _Coming Soon_ | _Coming Soon_ |
+| **Week 6** | Production Deployment | _Coming Soon_ | _Coming Soon_ |
+
+**📥 Clone a specific week's release:**
+```bash
+# Clone a specific week's code
+git clone --branch <WEEK_TAG> https://github.com/jamwithai/arxiv-paper-curator
+cd arxiv-paper-curator
+uv sync
+docker compose down -v
+docker compose up --build -d
+
+# Replace <WEEK_TAG> with: week1.0, week2.0, etc.
 ```
 
 ### **📊 Access Your Services**
@@ -230,7 +254,7 @@ Complete when you can:
 ### **🏗️ Project Structure**
 
 ```
-zero_to_RAG/
+arxiv-paper-curator/
 ├── src/                                    # Main application code
 │   ├── main.py                             # FastAPI application
 │   ├── routers/                            # API endpoints

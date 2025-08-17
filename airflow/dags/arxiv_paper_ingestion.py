@@ -30,7 +30,7 @@ dag = DAG(
     "arxiv_paper_ingestion",
     default_args=default_args,
     description="Daily arXiv CS.AI paper ingestion and processing pipeline",
-    schedule="0 6 * * *",  # Daily at 6 AM UTC
+    schedule="0 6 * * 1-5",  # Monday-Friday at 6 AM UTC (excludes weekends)
     max_active_runs=1,
     catchup=False,
     tags=["arxiv", "papers", "ingestion", "week2"],
