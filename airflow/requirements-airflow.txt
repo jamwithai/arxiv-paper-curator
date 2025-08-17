@@ -6,6 +6,10 @@ python-dateutil>=2.8.0
 
 # PDF processing dependencies  
 docling>=2.0.0
+pypdfium2>=4.0.0
+numpy<2.0.0  # Fix compatibility with PyTorch 2.2.2 and transformers
+torch==2.2.2
+torchvision==0.17.2
 
 # Database drivers
 psycopg2-binary>=2.9.0

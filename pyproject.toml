@@ -14,7 +14,11 @@ dependencies = [
     "opensearch-py>=3.0.0",
     "requests>=2.32.3",
     "httpx>=0.28.1",
-    "docling>=2.43.0",
+    "pypdfium2>=4.0.0",
+    "numpy<2.0.0",  # Fix compatibility with PyTorch 2.2.2 and transformers
+    "torch==2.2.2",
+    "torchvision==0.17.2",
+    "docling>=2.44.0",
     "python-dateutil>=2.9.0.post0",
 ]
 readme = "README.md"
