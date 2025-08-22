@@ -16,11 +16,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    env_file:
+      - .env
     environment:
+      # Container-specific overrides
       - OPENSEARCH_HOST=http://opensearch:9200
+      - OPENSEARCH__HOST=http://opensearch:9200
       - OLLAMA_HOST=http://ollama:11434
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      - ENVIRONMENT=development
     networks:
       - rag-network
 
@@ -79,16 +82,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__LOAD_EXAMPLES=false
-      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=true
+      # Airflow-specific environment setup
       - AIRFLOW_HOME=/opt/airflow
-      # Environment variables for DAG tasks
+      - PYTHONPATH=/opt/airflow/src
+      # Container hostnames for Airflow
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
       - OPENSEARCH_HOST=http://opensearch:9200
-      - PYTHONPATH=/opt/airflow/src
+      - OPENSEARCH__HOST=http://opensearch:9200
+      - OLLAMA_HOST=http://ollama:11434
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs

@@ -8,7 +8,6 @@ class ParserType(str, Enum):
     """PDF parser types."""
 
     DOCLING = "docling"
-    GROBID = "grobid"  # For future use
 
 
 class PaperSection(BaseModel):

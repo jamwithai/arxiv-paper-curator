@@ -37,7 +37,7 @@ class PaperCreate(PaperBase):
     references: Optional[List[Dict[str, Any]]] = Field(None, description="List of references if extracted")
 
     # PDF processing metadata (optional)
-    parser_used: Optional[str] = Field(None, description="Which parser was used (DOCLING, GROBID, etc.)")
+    parser_used: Optional[str] = Field(None, description="Which parser was used (DOCLING, etc.)")
     parser_metadata: Optional[Dict[str, Any]] = Field(None, description="Additional parser metadata")
     pdf_processed: Optional[bool] = Field(False, description="Whether PDF was successfully processed")
     pdf_processing_date: Optional[datetime] = Field(None, description="When PDF was processed")

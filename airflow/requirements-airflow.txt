@@ -11,5 +11,8 @@ numpy<2.0.0  # Fix compatibility with PyTorch 2.2.2 and transformers
 torch==2.2.2
 torchvision==0.17.2
 
+# Search engine dependencies
+opensearch-py>=2.4.0
+
 # Database drivers
 psycopg2-binary>=2.9.0
