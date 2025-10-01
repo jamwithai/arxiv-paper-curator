@@ -72,7 +72,7 @@ uv sync
 docker compose up --build -d
 
 # 5. Verify everything works
-curl http://localhost:8000/health
+curl [http://localhost:8000/health](http://localhost:8000/api/v1/health)
 ```
 
 ### **📚 Weekly Learning Path**
