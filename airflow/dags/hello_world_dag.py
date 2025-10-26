@@ -6,8 +6,10 @@ This is a simple DAG to verify Airflow is working correctly.
 
 from datetime import datetime, timedelta
 
+import psycopg2
+import requests
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 
 
 def hello_world():
@@ -18,15 +20,12 @@ def hello_world():
 
 def check_services():
     """Check if other services are accessible."""
-    import requests
-    
     try:
         # Check API health
-        response = requests.get("http://rag-api:8000/health", timeout=5)
+        response = requests.get("http://rag-api:8000/api/v1/health", timeout=5)
         print(f"API Health: {response.status_code}")
-        
+
         # Check database connection
-        import psycopg2
         conn = psycopg2.connect(
             host="postgres",
             port=5432,
@@ -36,7 +35,7 @@ def check_services():
         )
         print("Database: Connected successfully")
         conn.close()
-        
+
         return "Services are accessible"
     except Exception as e:
         print(f"Service check failed: {e}")

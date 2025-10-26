@@ -11,16 +11,18 @@ services:
       opensearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')\""]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    env_file:
+      - .env
     environment:
+      # Container-specific overrides (for inter-service communication)
       - OPENSEARCH_HOST=http://opensearch:9200
       - OLLAMA_HOST=http://ollama:11434
       - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      - ENVIRONMENT=development
     networks:
       - rag-network
 
@@ -71,45 +73,40 @@ services:
       - rag-network
 
   airflow:
-    image: apache/airflow:3.0.3
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     container_name: rag-airflow
-    environment:
-      # Core settings for Airflow 3.0 with SimpleAuth (default)
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      # Disable examples for simplicity
-      - AIRFLOW__CORE__LOAD_EXAMPLES=false
-      # Set Airflow home to keep config files organized
-      - AIRFLOW_HOME=/opt/airflow/home
-      # Environment variables for DAG tasks
-      - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
-      - OPENSEARCH_HOST=http://opensearch:9200
-      - PYTHONPATH=/opt/airflow/src
-    volumes:
-      - ./airflow/dags:/opt/airflow/dags
-      - ./airflow:/opt/airflow/home  # Mount airflow folder as Airflow home
-      - ./src:/opt/airflow/src  # Mount only src folder for DAG access
-      - airflow_logs:/opt/airflow/logs
-    ports:
-      - "8080:8080"
+    # user: "50000:0"  # Uncomment for WSL/Ubuntu, comment out for Mac
     depends_on:
       postgres:
         condition: service_healthy
       opensearch:
         condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Airflow-specific environment setup
+      - AIRFLOW_HOME=/opt/airflow
+      - PYTHONPATH=/opt/airflow/src
+      # Container hostnames for Airflow
+      - POSTGRES_DATABASE_URL=postgresql+psycopg2://rag_user:rag_password@postgres:5432/rag_db
+      - OPENSEARCH_HOST=http://opensearch:9200
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./src:/opt/airflow/src
+    ports:
+      - "8080:8080"
+    # Command handled by entrypoint.sh
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v2/monitor/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
       start_period: 120s
-    entrypoint: /bin/bash
-    command: >
-      -c "
-        pip install pydantic pydantic-settings sqlalchemy httpx &&
-        airflow db migrate &&
-        exec airflow standalone
-      "
     networks:
       - rag-network
 
@@ -142,7 +139,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./airflow/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rag_user -d rag_db"]
       interval: 5s
