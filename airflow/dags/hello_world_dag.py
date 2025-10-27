@@ -58,7 +58,7 @@ dag = DAG(
     'hello_world_week1',
     default_args=default_args,
     description='Hello World DAG for Week 1',
-    schedule=None,  # Manual trigger only (changed in Airflow 3.0)
+    schedule=None,  # Manual trigger only (schedule parameter introduced in Airflow 2.4+)
     catchup=False,
     tags=['week1', 'testing'],
 )

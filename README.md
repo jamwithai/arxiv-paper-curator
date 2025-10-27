@@ -64,7 +64,7 @@ curl http://localhost:8000/health
 | **Airflow Dashboard** | http://localhost:8080 | Workflow management |
 | **OpenSearch Dashboards** | http://localhost:5601 | Hybrid search engine UI |
 
-#### **NOTE**: Check airflow/simple_auth_manager_passwords.json.generated for Airflow username and password
+#### **NOTE**: Default Airflow credentials are **username**: `admin`, **password**: `admin`
 ---
 
 ## 📚 Learning Materials
@@ -97,8 +97,8 @@ uv run jupyter notebook notebooks/week1/week1_setup.ipynb
 - **FastAPI**: REST endpoints with async support (Port 8000)  
 - **PostgreSQL 16**: Paper metadata storage (Port 5432)
 - **OpenSearch 2.19**: Search engine with dashboards (Ports 9200, 5601)
-- **Apache Airflow 3.0**: Workflow orchestration (Port 8080)
-- **Ollama**: Local LLM server (Port 11434)
+- **Apache Airflow 2.10**: Workflow orchestration (Port 8080)
+- **Ollama 0.11**: Local LLM server (Port 11434)
 
 ### **📖 Week 1 Blog Post**
 [The Infrastructure That Powers RAG Systems](https://jamwithai.substack.com/p/the-infrastructure-that-powers-rag) - Detailed walkthrough and production insights.
@@ -112,8 +112,8 @@ uv run jupyter notebook notebooks/week1/week1_setup.ipynb
 | **FastAPI** | REST API with automatic docs | ✅ Ready |
 | **PostgreSQL 16** | Paper metadata and content storage | ✅ Ready |
 | **OpenSearch 2.19** | Hybrid search engine | ✅ Ready |
-| **Apache Airflow 3.0** | Workflow automation | ✅ Ready |
-| **Ollama** | Local LLM serving | ✅ Ready |
+| **Apache Airflow 2.10** | Workflow automation | ✅ Ready |
+| **Ollama 0.11** | Local LLM serving | ✅ Ready |
 
 **Development Tools:** UV, Ruff, MyPy, Pytest, Docker Compose
 

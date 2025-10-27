@@ -25,8 +25,8 @@ A comprehensive Jupyter notebook that guides students through:
 - **FastAPI** (Port 8000): REST API with async support and automatic documentation
 - **PostgreSQL 16** (Port 5432): Primary database for paper metadata and content storage
 - **OpenSearch 2.19** (Ports 9200, 5601): Hybrid search engine with management dashboards
-- **Apache Airflow 3.0** (Port 8080): Workflow orchestration with DAGs and PostgreSQL backend
-- **Ollama** (Port 11434): Local LLM server for future RAG implementation
+- **Apache Airflow 2.10** (Port 8080): Workflow orchestration with DAGs and PostgreSQL backend
+- **Ollama 0.11** (Port 11434): Local LLM server for future RAG implementation
 - **Docker Network**: All services communicate via `rag-network` with persistent volumes
 
 3. **Service-by-Service Setup**
