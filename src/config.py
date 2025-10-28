@@ -61,10 +61,20 @@ class PDFParserSettings(BaseConfigSettings):
         case_sensitive=False,
     )
 
+    # Parser selection
+    parser_type: str = "docling"  # "docling" or "deepseek"
+
+    # Common settings
     max_pages: int = 30
     max_file_size_mb: int = 20
+
+    # Docling-specific settings
     do_ocr: bool = False
     do_table_structure: bool = True
+
+    # DeepSeek-specific settings
+    deepseek_model: str = "deepseek-ai/DeepSeek-OCR"
+    deepseek_resolution: str = "base"  # tiny|small|base|large
 
 
 class ChunkingSettings(BaseConfigSettings):

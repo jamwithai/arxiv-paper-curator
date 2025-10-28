@@ -8,6 +8,7 @@ class ParserType(str, Enum):
     """PDF parser types."""
 
     DOCLING = "docling"
+    DEEPSEEK = "deepseek"
 
 
 class PaperSection(BaseModel):

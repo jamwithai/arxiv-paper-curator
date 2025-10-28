@@ -20,6 +20,10 @@ dependencies = [
     "gradio>=4.0.0",
     "langfuse>=2.0.0,<3.0.0",
     "redis>=6.4.0",
+    "transformers>=4.50.0",
+    "torch>=2.6.0",
+    "pillow>=10.0.0",
+    "pypdfium2>=4.30.0",
 ]
 readme = "README.md"
 
