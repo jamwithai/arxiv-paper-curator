@@ -85,7 +85,7 @@ By the end of this course, you'll have your own AI research assistant and the de
 ```bash
 # 1. Clone and setup
 git clone <repository-url>
-cd arxiv-paper-curator
+cd production-agentic-rag-course
 
 # 2. Configure environment (IMPORTANT!)
 cp .env.example .env
@@ -120,7 +120,7 @@ curl http://localhost:8000/api/v1/health
 ```bash
 # Clone a specific week's code
 git clone --branch <WEEK_TAG> https://github.com/jamwithai/arxiv-paper-curator
-cd arxiv-paper-curator
+cd production-agentic-rag-course
 uv sync
 docker compose down -v
 docker compose up --build -d
