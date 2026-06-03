@@ -23,7 +23,7 @@ dependencies = [
     "python-telegram-bot>=21.0,<22.0",
     "langgraph>=0.2.0",
     "langchain>=0.3.0",
-    "langchain-core>=0.3.0",
+    "langchain-core>=1.2.5",
     "langchain-community>=0.3.0",
     "langchain-ollama>=0.3.0",
 ]
