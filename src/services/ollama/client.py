@@ -116,9 +116,8 @@ class OllamaClient:
 
                     # Calculate total tokens
                     if usage_metadata:
-                        usage_metadata["total_tokens"] = (
-                            usage_metadata.get("prompt_tokens", 0) +
-                            usage_metadata.get("completion_tokens", 0)
+                        usage_metadata["total_tokens"] = usage_metadata.get("prompt_tokens", 0) + usage_metadata.get(
+                            "completion_tokens", 0
                         )
 
                     # Parse timing information (convert nanoseconds to milliseconds)

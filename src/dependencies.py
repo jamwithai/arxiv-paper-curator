@@ -13,6 +13,8 @@ else:
 
 from src.config import Settings
 from src.db.interfaces.base import BaseDatabase
+from src.services.agents.agentic_rag import AgenticRAGService
+from src.services.agents.factory import make_agentic_rag_service
 from src.services.arxiv.client import ArxivClient
 from src.services.cache.client import CacheClient
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
@@ -21,8 +23,6 @@ from src.services.ollama.client import OllamaClient
 from src.services.opensearch.client import OpenSearchClient
 from src.services.pdf_parser.parser import PDFParserService
 from src.services.telegram.bot import TelegramBot
-from src.services.agents.agentic_rag import AgenticRAGService
-from src.services.agents.factory import make_agentic_rag_service
 
 
 @lru_cache

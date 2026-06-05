@@ -2,7 +2,6 @@ import logging
 
 from langchain_core.documents import Document
 from langchain_core.tools import tool
-
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.opensearch.client import OpenSearchClient
 

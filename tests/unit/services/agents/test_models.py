@@ -1,14 +1,13 @@
 import pytest
 from pydantic import ValidationError
-
 from src.services.agents.models import (
-    GuardrailScoring,
     GradeDocuments,
+    GradingResult,
+    GuardrailScoring,
+    ReasoningStep,
+    RoutingDecision,
     SourceItem,
     ToolArtefact,
-    RoutingDecision,
-    GradingResult,
-    ReasoningStep,
 )
 
 
@@ -75,7 +74,7 @@ class TestSourceItem:
             title="Attention Is All You Need",
             authors=["Vaswani, A.", "Shazeer, N."],
             url="https://arxiv.org/abs/1706.03762",
-            relevance_score=0.95
+            relevance_score=0.95,
         )
         assert source.arxiv_id == "1706.03762"
         assert source.title == "Attention Is All You Need"
@@ -85,11 +84,7 @@ class TestSourceItem:
 
     def test_default_values(self):
         """Test default field values."""
-        source = SourceItem(
-            arxiv_id="1234.5678",
-            title="Test Paper",
-            url="https://arxiv.org/abs/1234.5678"
-        )
+        source = SourceItem(arxiv_id="1234.5678", title="Test Paper", url="https://arxiv.org/abs/1234.5678")
         assert source.authors == []
         assert source.relevance_score == 0.0
 
@@ -100,7 +95,7 @@ class TestSourceItem:
             title="Attention Is All You Need",
             authors=["Vaswani, A."],
             url="https://arxiv.org/abs/1706.03762",
-            relevance_score=0.95
+            relevance_score=0.95,
         )
         source_dict = source.to_dict()
 
@@ -121,7 +116,7 @@ class TestToolArtefact:
             tool_name="retrieve_papers",
             tool_call_id="call_123",
             content="Retrieved 3 papers",
-            metadata={"count": 3, "source": "opensearch"}
+            metadata={"count": 3, "source": "opensearch"},
         )
         assert artefact.tool_name == "retrieve_papers"
         assert artefact.tool_call_id == "call_123"
@@ -130,11 +125,7 @@ class TestToolArtefact:
 
     def test_default_metadata(self):
         """Test default empty metadata."""
-        artefact = ToolArtefact(
-            tool_name="test_tool",
-            tool_call_id="call_456",
-            content="Test content"
-        )
+        artefact = ToolArtefact(tool_name="test_tool", tool_call_id="call_456", content="Test content")
         assert artefact.metadata == {}
 
 
@@ -167,10 +158,7 @@ class TestGradingResult:
     def test_valid_grading_result(self):
         """Test creating valid grading result."""
         result = GradingResult(
-            document_id="doc_123",
-            is_relevant=True,
-            score=0.87,
-            reasoning="Contains relevant information about transformers"
+            document_id="doc_123", is_relevant=True, score=0.87, reasoning="Contains relevant information about transformers"
         )
         assert result.document_id == "doc_123"
         assert result.is_relevant is True
@@ -179,10 +167,7 @@ class TestGradingResult:
 
     def test_default_values(self):
         """Test default field values."""
-        result = GradingResult(
-            document_id="doc_456",
-            is_relevant=False
-        )
+        result = GradingResult(document_id="doc_456", is_relevant=False)
         assert result.score == 0.0
         assert result.reasoning == ""
 
@@ -195,7 +180,7 @@ class TestReasoningStep:
         step = ReasoningStep(
             step_name="retrieve",
             description="Retrieved 3 relevant papers from OpenSearch",
-            metadata={"num_docs": 3, "retrieval_time_ms": 150}
+            metadata={"num_docs": 3, "retrieval_time_ms": 150},
         )
         assert step.step_name == "retrieve"
         assert step.description == "Retrieved 3 relevant papers from OpenSearch"
@@ -204,8 +189,5 @@ class TestReasoningStep:
 
     def test_default_metadata(self):
         """Test default empty metadata."""
-        step = ReasoningStep(
-            step_name="generate",
-            description="Generated final answer"
-        )
+        step = ReasoningStep(step_name="generate", description="Generated final answer")
         assert step.metadata == {}

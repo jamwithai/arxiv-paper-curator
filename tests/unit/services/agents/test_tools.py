@@ -1,7 +1,7 @@
-import pytest
 from unittest.mock import AsyncMock
-from langchain_core.documents import Document
 
+import pytest
+from langchain_core.documents import Document
 from src.services.agents.tools import create_retriever_tool
 
 
@@ -49,6 +49,7 @@ async def test_create_retriever_tool_basic(mock_opensearch_client, mock_jina_emb
 async def test_retriever_tool_empty_results(mock_opensearch_client, mock_jina_embeddings_client):
     """Test retriever tool with no results."""
     from unittest.mock import Mock
+
     mock_opensearch_client.search_unified = Mock(return_value={"hits": []})
 
     tool = create_retriever_tool(
@@ -84,18 +85,21 @@ async def test_retriever_tool_custom_top_k(mock_opensearch_client, mock_jina_emb
 async def test_retriever_tool_metadata_fields(mock_opensearch_client, mock_jina_embeddings_client):
     """Test that all expected metadata fields are present."""
     from unittest.mock import Mock
-    mock_opensearch_client.search_unified = Mock(return_value={
-        "hits": [
-            {
-                "chunk_text": "Test content",
-                "arxiv_id": "2301.00001",
-                "title": "Test Paper",
-                "authors": "Author One, Author Two",
-                "score": 0.95,
-                "section_name": "Introduction",
-            }
-        ]
-    })
+
+    mock_opensearch_client.search_unified = Mock(
+        return_value={
+            "hits": [
+                {
+                    "chunk_text": "Test content",
+                    "arxiv_id": "2301.00001",
+                    "title": "Test Paper",
+                    "authors": "Author One, Author Two",
+                    "score": 0.95,
+                    "section_name": "Introduction",
+                }
+            ]
+        }
+    )
 
     tool = create_retriever_tool(
         opensearch_client=mock_opensearch_client,

@@ -90,7 +90,7 @@ async def ainvoke_generate_answer_step(
         response = await llm.ainvoke(answer_prompt)
 
         # Extract content from response
-        answer = response.content if hasattr(response, 'content') else str(response)
+        answer = response.content if hasattr(response, "content") else str(response)
         logger.info(f"Generated answer of length: {len(answer)} characters")
 
         # Update span with successful result

@@ -1,11 +1,10 @@
 import logging
 from typing import Optional
 
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-
 from src.schemas.api.ask import AskRequest, AskResponse
 from src.schemas.api.search import HybridSearchRequest
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 logger = logging.getLogger(__name__)
 
@@ -192,9 +191,7 @@ class TelegramBot:
             answer = ollama_response.get("response", "") if ollama_response else ""
 
             # Build response
-            response = AskResponse(
-                query=query, answer=answer, sources=sources, chunks_used=len(chunks), search_mode="hybrid"
-            )
+            response = AskResponse(query=query, answer=answer, sources=sources, chunks_used=len(chunks), search_mode="hybrid")
 
             # Cache it
             if self.cache:

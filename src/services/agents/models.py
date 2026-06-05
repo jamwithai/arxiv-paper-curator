@@ -74,9 +74,7 @@ class RoutingDecision(BaseModel):
     :param reason: Explanation for the routing decision
     """
 
-    route: Literal["retrieve", "out_of_scope", "generate_answer", "rewrite_query"] = Field(
-        description="Next node to route to"
-    )
+    route: Literal["retrieve", "out_of_scope", "generate_answer", "rewrite_query"] = Field(description="Next node to route to")
     reason: str = Field(default="", description="Reason for routing decision")
 
 

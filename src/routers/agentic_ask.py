@@ -81,10 +81,7 @@ async def submit_feedback(
     """
     try:
         if not langfuse_tracer:
-            raise HTTPException(
-                status_code=503,
-                detail="Langfuse tracing is disabled. Cannot submit feedback."
-            )
+            raise HTTPException(status_code=503, detail="Langfuse tracing is disabled. Cannot submit feedback.")
 
         success = langfuse_tracer.submit_feedback(
             trace_id=request.trace_id,
@@ -96,20 +93,11 @@ async def submit_feedback(
             # Flush to ensure feedback is sent immediately
             langfuse_tracer.flush()
 
-            return FeedbackResponse(
-                success=True,
-                message="Feedback recorded successfully"
-            )
+            return FeedbackResponse(success=True, message="Feedback recorded successfully")
         else:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to submit feedback to Langfuse"
-            )
+            raise HTTPException(status_code=500, detail="Failed to submit feedback to Langfuse")
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error submitting feedback: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error submitting feedback: {str(e)}")
