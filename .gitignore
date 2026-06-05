@@ -136,8 +136,10 @@ cython_debug/
 claude_session_*
 .claude_session/
 *.claude_session
-.claude/
-CLAUDE.md
+# Personal Claude Code files (committed: .claude/settings.json, skills/, commands/, CLAUDE.md)
+.claude/settings.local.json
+.claude/worktrees/
+.claude/docs/
 
 # PyCharm
 .idea/

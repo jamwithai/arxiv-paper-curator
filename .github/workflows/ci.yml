@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint
+        run: uv run ruff check
+
+      - name: Format check
+        run: uv run ruff format --check
+
+      - name: Type check
+        run: uv run mypy src/
+
+      # Hermetic unit tests only. tests/api and tests/integration need live services
+      # (make start) — run them locally via /local-ci. tests/unit/services/agents is
+      # excluded while the Week 7 agentic RAG work is being stabilized; re-enable after.
+      - name: Unit tests
+        run: uv run pytest tests/unit --ignore=tests/unit/services/agents
