@@ -1,11 +1,15 @@
 from dataclasses import dataclass
 from langfuse._client.span import LangfuseSpan
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.langfuse.client import LangfuseTracer
+from src.services.minimax.client import MiniMaxClient
 from src.services.ollama.client import OllamaClient
 from src.services.opensearch.client import OpenSearchClient
+
+# Union type for any LLM client that implements get_langchain_model()
+LLMClient = Union[OllamaClient, MiniMaxClient]
 
 
 @dataclass
@@ -14,7 +18,7 @@ class Context:
 
     This contains immutable dependencies that nodes need but don't modify.
 
-    :param ollama_client: Client for LLM generation
+    :param llm_client: Client for LLM generation (OllamaClient or MiniMaxClient)
     :param opensearch_client: Client for document search
     :param embeddings_client: Client for embeddings
     :param langfuse_tracer: Optional tracer for observability
@@ -27,7 +31,7 @@ class Context:
     :param guardrail_threshold: Threshold for guardrail validation (0-100)
     """
 
-    ollama_client: OllamaClient
+    llm_client: LLMClient
     opensearch_client: OpenSearchClient
     embeddings_client: JinaEmbeddingsClient
     langfuse_tracer: Optional[LangfuseTracer]

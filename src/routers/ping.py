@@ -3,7 +3,7 @@ from sqlalchemy import text
 
 from ..dependencies import DatabaseDep, OpenSearchDep, SettingsDep
 from ..schemas.api.health import HealthResponse, ServiceStatus
-from ..services.ollama import OllamaClient
+from ..services.llm_factory import make_llm_client
 
 router = APIRouter()
 
@@ -53,15 +53,16 @@ async def health_check(settings: SettingsDep, database: DatabaseDep, opensearch_
     _check_service("database", _check_database)
     _check_service("opensearch", _check_opensearch)
 
-    # Handle Ollama async check separately
+    # Handle LLM provider async check separately
     try:
-        ollama_client = OllamaClient(settings)
-        ollama_health = await ollama_client.health_check()
-        services["ollama"] = ServiceStatus(status=ollama_health["status"], message=ollama_health["message"])
-        if ollama_health["status"] != "healthy":
+        llm_client = make_llm_client()
+        llm_health = await llm_client.health_check()
+        provider_name = settings.llm_provider
+        services[provider_name] = ServiceStatus(status=llm_health["status"], message=llm_health["message"])
+        if llm_health["status"] != "healthy":
             overall_status = "degraded"
     except Exception as e:
-        services["ollama"] = ServiceStatus(status="unhealthy", message=str(e))
+        services[settings.llm_provider] = ServiceStatus(status="unhealthy", message=str(e))
         overall_status = "degraded"
 
     return HealthResponse(

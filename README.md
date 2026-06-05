@@ -423,6 +423,8 @@ cp .env.example .env
 ```
 
 **Key Variables:**
+- `LLM_PROVIDER` - LLM backend: `ollama` (default, local) or `minimax` (cloud)
+- `MINIMAX_API_KEY` - Required when `LLM_PROVIDER=minimax` ([Get API key](https://platform.minimax.io))
 - `JINA_API_KEY` - Required for Week 4+ (hybrid search with embeddings)
 - `TELEGRAM__BOT_TOKEN` - Required for Week 7 (Telegram bot integration)
 - `LANGFUSE__PUBLIC_KEY` & `LANGFUSE__SECRET_KEY` - Optional for Week 6 (monitoring)
@@ -443,6 +445,7 @@ cp .env.example .env
 | **Apache Airflow 3.0** | Workflow automation | ✅ Ready |
 | **Jina AI** | Embedding generation (Week 4) | ✅ Ready |
 | **Ollama** | Local LLM serving (Week 5) | ✅ Ready |
+| **[MiniMax](https://platform.minimax.io)** | Cloud LLM provider (MiniMax-M3) | ✅ Ready |
 | **Redis** | High-performance caching (Week 6) | ✅ Ready |
 | **Langfuse** | RAG pipeline observability (Week 6) | ✅ Ready |
 

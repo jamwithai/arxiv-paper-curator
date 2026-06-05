@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import httpx
+from langchain_ollama import ChatOllama
 from src.config import Settings
 from src.exceptions import OllamaConnectionError, OllamaException, OllamaTimeoutError
 from src.schemas.ollama import RAGResponse
@@ -20,6 +21,31 @@ class OllamaClient:
         self.timeout = httpx.Timeout(float(settings.ollama_timeout))
         self.prompt_builder = RAGPromptBuilder()
         self.response_parser = ResponseParser()
+
+    def get_langchain_model(
+        self,
+        model: Optional[str] = None,
+        temperature: float = 0.0,
+        **kwargs,
+    ) -> ChatOllama:
+        """Return a LangChain ChatOllama model instance.
+
+        This is the primary interface used by agent nodes for LLM calls.
+
+        Args:
+            model: Model name (defaults to llama3.2:1b)
+            temperature: Generation temperature
+            **kwargs: Additional model parameters
+
+        Returns:
+            ChatOllama instance configured for the Ollama service
+        """
+        return ChatOllama(
+            model=model or "llama3.2:1b",
+            base_url=self.base_url,
+            temperature=temperature,
+            **kwargs,
+        )
 
     async def health_check(self) -> Dict[str, Any]:
         """

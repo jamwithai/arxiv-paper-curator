@@ -7,9 +7,9 @@ from langfuse.langchain import CallbackHandler
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
+from src.services.agents.context import LLMClient
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.langfuse.client import LangfuseTracer
-from src.services.ollama.client import OllamaClient
 from src.services.opensearch.client import OpenSearchClient
 
 from .config import GraphConfig
@@ -42,7 +42,7 @@ class AgenticRAGService:
     def __init__(
         self,
         opensearch_client: OpenSearchClient,
-        ollama_client: OllamaClient,
+        llm_client: LLMClient,
         embeddings_client: JinaEmbeddingsClient,
         langfuse_tracer: Optional[LangfuseTracer] = None,
         graph_config: Optional[GraphConfig] = None,
@@ -50,13 +50,13 @@ class AgenticRAGService:
         """Initialize agentic RAG service.
 
         :param opensearch_client: Client for document search
-        :param ollama_client: Client for LLM generation
+        :param llm_client: Client for LLM generation (OllamaClient or MiniMaxClient)
         :param embeddings_client: Client for embeddings
         :param langfuse_tracer: Optional Langfuse tracer
         :param graph_config: Configuration for graph execution
         """
         self.opensearch = opensearch_client
-        self.ollama = ollama_client
+        self.llm_client = llm_client
         self.embeddings = embeddings_client
         self.langfuse_tracer = langfuse_tracer
         self.graph_config = graph_config or GraphConfig()
@@ -250,7 +250,7 @@ class AgenticRAGService:
 
             # Runtime context (dependencies)
             runtime_context = Context(
-                ollama_client=self.ollama,
+                llm_client=self.llm_client,
                 opensearch_client=self.opensearch,
                 embeddings_client=self.embeddings,
                 langfuse_tracer=self.langfuse_tracer,

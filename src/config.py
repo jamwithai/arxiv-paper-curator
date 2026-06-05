@@ -170,9 +170,18 @@ class Settings(BaseConfigSettings):
     postgres_pool_size: int = 20
     postgres_max_overflow: int = 0
 
+    # LLM provider selection: "ollama" (local) or "minimax" (cloud)
+    llm_provider: str = "ollama"
+
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3.2:1b"
     ollama_timeout: int = 300
+
+    # MiniMax cloud LLM configuration (OpenAI-compatible API)
+    minimax_api_key: str = ""
+    minimax_model: str = "MiniMax-M3"
+    minimax_base_url: str = "https://api.minimax.io/v1"
+    minimax_timeout: int = 300
 
     # Jina AI embeddings configuration
     jina_api_key: str = ""

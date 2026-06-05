@@ -82,6 +82,18 @@ class OllamaTimeoutError(OllamaException):
     """Exception raised when Ollama service times out."""
 
 
+class MiniMaxException(LLMException):
+    """Exception raised for MiniMax API errors."""
+
+
+class MiniMaxConnectionError(MiniMaxException):
+    """Exception raised when cannot connect to MiniMax API."""
+
+
+class MiniMaxTimeoutError(MiniMaxException):
+    """Exception raised when MiniMax API times out."""
+
+
 # General application exceptions
 class ConfigurationError(Exception):
     """Exception raised when configuration is invalid."""

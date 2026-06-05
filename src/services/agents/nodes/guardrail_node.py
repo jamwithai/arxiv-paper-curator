@@ -81,7 +81,7 @@ async def ainvoke_guardrail_step(
         guardrail_prompt = GUARDRAIL_PROMPT.format(question=query)
 
         # Get LLM from runtime context
-        llm = runtime.context.ollama_client.get_langchain_model(
+        llm = runtime.context.llm_client.get_langchain_model(
             model=runtime.context.model_name,
             temperature=0.0,
         )
