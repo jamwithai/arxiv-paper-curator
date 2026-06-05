@@ -30,7 +30,7 @@ class PDFParserService:
             raise PDFValidationError(f"PDF file not found: {pdf_path}")
 
         try:
-            result = await self.docling_parser.parse_pdf(pdf_path)
+            result = self.docling_parser.parse_pdf(pdf_path)
             if result:
                 logger.info(f"Parsed {pdf_path.name}")
                 return result
