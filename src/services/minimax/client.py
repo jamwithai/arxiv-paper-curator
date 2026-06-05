@@ -12,7 +12,7 @@ from src.services.ollama.prompts import RAGPromptBuilder, ResponseParser
 logger = logging.getLogger(__name__)
 
 # MiniMax models available via OpenAI-compatible API
-MINIMAX_MODELS = ["MiniMax-M2.7", "MiniMax-M2.7-highspeed"]
+MINIMAX_MODELS = ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed"]
 
 
 def _clamp_temperature(temperature: float) -> float:
@@ -35,7 +35,7 @@ def _clamp_temperature(temperature: float) -> float:
 def _strip_think_tags(text: str) -> str:
     """Strip <think>...</think> tags from MiniMax responses.
 
-    MiniMax M2.7 may include thinking tags in structured output responses.
+    MiniMax models may include thinking tags in structured output responses.
 
     Args:
         text: Raw response text
@@ -285,7 +285,7 @@ class MiniMaxClient:
         self,
         query: str,
         chunks: List[Dict[str, Any]],
-        model: str = "MiniMax-M2.7",
+        model: str = "MiniMax-M3",
         use_structured_output: bool = False,
     ) -> Dict[str, Any]:
         """Generate a RAG answer using retrieved chunks.
@@ -348,7 +348,7 @@ class MiniMaxClient:
         self,
         query: str,
         chunks: List[Dict[str, Any]],
-        model: str = "MiniMax-M2.7",
+        model: str = "MiniMax-M3",
     ):
         """Generate a streaming RAG answer using retrieved chunks.
 

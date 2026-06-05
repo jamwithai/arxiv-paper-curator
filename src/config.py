@@ -179,7 +179,7 @@ class Settings(BaseConfigSettings):
 
     # MiniMax cloud LLM configuration (OpenAI-compatible API)
     minimax_api_key: str = ""
-    minimax_model: str = "MiniMax-M2.7"
+    minimax_model: str = "MiniMax-M3"
     minimax_base_url: str = "https://api.minimax.io/v1"
     minimax_timeout: int = 300
 

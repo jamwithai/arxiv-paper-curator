@@ -445,7 +445,7 @@ cp .env.example .env
 | **Apache Airflow 3.0** | Workflow automation | ✅ Ready |
 | **Jina AI** | Embedding generation (Week 4) | ✅ Ready |
 | **Ollama** | Local LLM serving (Week 5) | ✅ Ready |
-| **[MiniMax](https://platform.minimax.io)** | Cloud LLM provider (MiniMax-M2.7) | ✅ Ready |
+| **[MiniMax](https://platform.minimax.io)** | Cloud LLM provider (MiniMax-M3) | ✅ Ready |
 | **Redis** | High-performance caching (Week 6) | ✅ Ready |
 | **Langfuse** | RAG pipeline observability (Week 6) | ✅ Ready |
 

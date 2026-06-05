@@ -19,7 +19,7 @@ def minimax_settings():
     """Create mock settings for MiniMax client."""
     settings = MagicMock()
     settings.minimax_api_key = "test-api-key"
-    settings.minimax_model = "MiniMax-M2.7"
+    settings.minimax_model = "MiniMax-M3"
     settings.minimax_base_url = "https://api.minimax.io/v1"
     settings.minimax_timeout = 300
     return settings
@@ -78,12 +78,14 @@ class TestMiniMaxClientInit:
 
     def test_client_initialization(self, minimax_client, minimax_settings):
         assert minimax_client.api_key == "test-api-key"
-        assert minimax_client.default_model == "MiniMax-M2.7"
+        assert minimax_client.default_model == "MiniMax-M3"
         assert minimax_client.base_url == "https://api.minimax.io/v1"
 
     def test_models_list(self):
+        assert "MiniMax-M3" in MINIMAX_MODELS
         assert "MiniMax-M2.7" in MINIMAX_MODELS
         assert "MiniMax-M2.7-highspeed" in MINIMAX_MODELS
+        assert MINIMAX_MODELS[0] == "MiniMax-M3"
 
 
 class TestGetLangchainModel:
@@ -92,7 +94,7 @@ class TestGetLangchainModel:
     def test_returns_chat_openai(self, minimax_client):
         model = minimax_client.get_langchain_model()
         assert model is not None
-        assert model.model_name == "MiniMax-M2.7"
+        assert model.model_name == "MiniMax-M3"
 
     def test_custom_model(self, minimax_client):
         model = minimax_client.get_langchain_model(model="MiniMax-M2.7-highspeed")
@@ -149,9 +151,10 @@ class TestListModels:
     @pytest.mark.asyncio
     async def test_list_models(self, minimax_client):
         models = await minimax_client.list_models()
-        assert len(models) == 2
-        assert models[0]["id"] == "MiniMax-M2.7"
-        assert models[1]["id"] == "MiniMax-M2.7-highspeed"
+        assert len(models) == 3
+        assert models[0]["id"] == "MiniMax-M3"
+        assert models[1]["id"] == "MiniMax-M2.7"
+        assert models[2]["id"] == "MiniMax-M2.7-highspeed"
         assert models[0]["provider"] == "minimax"
 
 
@@ -179,7 +182,7 @@ class TestGenerate:
             mock_async_client.return_value = mock_client
 
             result = await minimax_client.generate(
-                model="MiniMax-M2.7",
+                model="MiniMax-M3",
                 prompt="Say hello",
             )
 
@@ -203,7 +206,7 @@ class TestGenerate:
             mock_async_client.return_value = mock_client
 
             result = await minimax_client.generate(
-                model="MiniMax-M2.7",
+                model="MiniMax-M3",
                 prompt="Test",
             )
 
@@ -224,7 +227,7 @@ class TestGenerate:
 
             with pytest.raises(MiniMaxException):
                 await minimax_client.generate(
-                    model="MiniMax-M2.7",
+                    model="MiniMax-M3",
                     prompt="Test",
                 )
 
@@ -246,7 +249,7 @@ class TestGenerate:
             mock_async_client.return_value = mock_client
 
             result = await minimax_client.generate(
-                model="MiniMax-M2.7",
+                model="MiniMax-M3",
                 prompt="Test",
                 format={"type": "json"},
                 response_format={"type": "json_object"},

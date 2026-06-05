@@ -32,7 +32,7 @@ class TestMakeLLMClient:
         mock_settings = MagicMock()
         mock_settings.llm_provider = "minimax"
         mock_settings.minimax_api_key = "test-key"
-        mock_settings.minimax_model = "MiniMax-M2.7"
+        mock_settings.minimax_model = "MiniMax-M3"
         mock_settings.minimax_base_url = "https://api.minimax.io/v1"
         mock_settings.minimax_timeout = 300
 
@@ -57,7 +57,7 @@ class TestMakeLLMClient:
         mock_settings = MagicMock()
         mock_settings.llm_provider = "MiniMax"
         mock_settings.minimax_api_key = "test-key"
-        mock_settings.minimax_model = "MiniMax-M2.7"
+        mock_settings.minimax_model = "MiniMax-M3"
         mock_settings.minimax_base_url = "https://api.minimax.io/v1"
         mock_settings.minimax_timeout = 300
 

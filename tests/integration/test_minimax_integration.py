@@ -21,7 +21,7 @@ def _get_minimax_client():
 
     settings = MagicMock()
     settings.minimax_api_key = api_key
-    settings.minimax_model = "MiniMax-M2.7"
+    settings.minimax_model = "MiniMax-M3"
     settings.minimax_base_url = "https://api.minimax.io/v1"
     settings.minimax_timeout = 60
     return MiniMaxClient(settings)
@@ -41,7 +41,7 @@ async def test_minimax_generate():
     """Test basic text generation with MiniMax API."""
     client = _get_minimax_client()
     result = await client.generate(
-        model="MiniMax-M2.7",
+        model="MiniMax-M3",
         prompt="What is 2+2? Reply with just the number.",
         temperature=0.01,
     )
@@ -56,9 +56,9 @@ async def test_minimax_generate():
 async def test_minimax_get_langchain_model():
     """Test LangChain model creation for MiniMax."""
     client = _get_minimax_client()
-    model = client.get_langchain_model(model="MiniMax-M2.7", temperature=0.5)
+    model = client.get_langchain_model(model="MiniMax-M3", temperature=0.5)
     assert model is not None
-    assert model.model_name == "MiniMax-M2.7"
+    assert model.model_name == "MiniMax-M3"
     assert model.temperature == 0.5
 
     # Test invocation
