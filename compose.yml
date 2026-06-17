@@ -241,6 +241,12 @@ services:
       REDIS_PORT: 6379
       REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD}
       REDIS_TLS_ENABLED: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'worker/dist/index.js' >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     networks:
       - rag-network
 
@@ -299,7 +305,7 @@ services:
       LANGFUSE_INIT_USER_NAME: "Admin User"
       LANGFUSE_INIT_USER_PASSWORD: "admin123"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/public/health || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://$(hostname):3000/api/public/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
