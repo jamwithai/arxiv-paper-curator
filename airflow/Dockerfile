@@ -13,6 +13,8 @@ RUN apt-get update && \
         curl \
         git \
         libpq-dev \
+        libgl1 \
+        libglib2.0-0 \
         poppler-utils \
         tesseract-ocr \
         && rm -rf /var/lib/apt/lists/*

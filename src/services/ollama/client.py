@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Any, Dict, List, Optional
+from langchain_ollama import ChatOllama
 
 import httpx
 from src.config import Settings
@@ -20,6 +21,39 @@ class OllamaClient:
         self.timeout = httpx.Timeout(float(settings.ollama_timeout))
         self.prompt_builder = RAGPromptBuilder()
         self.response_parser = ResponseParser()
+        self.settings = settings
+
+    def get_langchain_model(
+        self,
+        model: Optional[str] = None,
+        temperature: float = 0.0,
+        **kwargs: Any,
+    ):
+        """
+        Create and return a LangChain Ollama LLM instance.
+
+        Args:
+            model: Ollama model name (e.g. "llama3", "mistral", ...)
+            temperature: Sampling temperature
+            **kwargs: Additional Ollama parameters (top_p, num_ctx, etc.)
+
+        Returns:
+            LangChain BaseLLM instance
+        """
+        try:
+            llm = ChatOllama(
+                model=model or self.settings.ollama_model,
+                base_url=self.base_url,
+                temperature=temperature,
+                timeout=float(self.settings.ollama_timeout),
+                **kwargs,
+            )
+            return llm
+
+        except Exception as e:
+            logger.exception("Failed to create LangChain Ollama model")
+            raise OllamaException(f"Cannot create LangChain Ollama model: {e}")
+
 
     async def health_check(self) -> Dict[str, Any]:
         """

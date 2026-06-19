@@ -108,7 +108,7 @@ class OpenSearchSettings(BaseConfigSettings):
 class LangfuseSettings(BaseConfigSettings):
     model_config = SettingsConfigDict(
         env_file=[".env", str(ENV_FILE_PATH)],
-        env_prefix="LANGFUSE__",
+        env_prefix="LANGFUSE_",
         extra="ignore",
         frozen=True,
         case_sensitive=False,
