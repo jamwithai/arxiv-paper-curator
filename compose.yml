@@ -292,6 +292,7 @@ services:
       REDIS_PORT: 6379
       REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD}
       REDIS_TLS_ENABLED: "false"
+      LANGFUSE_INIT_ORG_ID: "default-org"
       LANGFUSE_INIT_ORG_NAME: "RAG Organization"
       LANGFUSE_INIT_PROJECT_NAME: "Agentic RAG"
       LANGFUSE_INIT_USER_EMAIL: "admin@example.com"

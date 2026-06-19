@@ -100,7 +100,7 @@ uv sync
 docker compose up --build -d
 
 # 5. Verify everything works
-curl http://localhost:8000/health
+curl http://localhost:8000/api/v1/health
 ```
 
 ### **📚 Weekly Learning Path**
@@ -551,8 +551,14 @@ uv run pytest                 # Run tests
   <p><strong>Begin with the Week 1 setup notebook and build your first production RAG system!</strong></p>
   
   <p><em>For learners who want to master modern AI engineering</em></p>
-  <p><strong>Built with love by Jam With AI</strong></p>
+  <p><strong>Built with love by <a href="https://www.linkedin.com/in/shirin-khosravi-jam/">Shirin Khosravi Jam</a> & <a href="https://www.linkedin.com/in/shantanuladhwe/">Shantanu Ladhwe</a></strong></p>
 </div>
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=jamwithai/production-agentic-rag-course&type=Date)](https://star-history.com/#jamwithai/production-agentic-rag-course&Date)
 
 ---
 

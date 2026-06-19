@@ -86,6 +86,11 @@ class OpenSearchClient:
             return False
 
         except Exception as e:
+            # Handle race condition when multiple workers start simultaneously:
+            # all check exists() -> False, all try to create, only one succeeds.
+            if "resource_already_exists_exception" in str(e):
+                logger.info(f"Hybrid index already exists (created by another worker): {self.index_name}")
+                return False
             logger.error(f"Error creating hybrid index: {e}")
             raise
 
