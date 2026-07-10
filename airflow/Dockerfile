@@ -34,6 +34,10 @@ RUN pip install --no-cache-dir \
     --constraint "${CONSTRAINT_URL}" \
     psycopg2-binary
 
+# Install CPU-only PyTorch first so docling doesn't pull multi-GB CUDA wheels
+# (Linux wheels on PyPI bundle full CUDA binaries by default)
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
 # Copy requirements and install project dependencies
 COPY requirements-airflow.txt /tmp/requirements-airflow.txt
 RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt
