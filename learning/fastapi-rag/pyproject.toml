@@ -1,0 +1,32 @@
+[project]
+name = "fastapi-rag-learning"
+version = "0.1.0"
+description = "A test-driven FastAPI and RAG learning lab"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "anyio>=4.9.0",
+    "httpx>=0.28.1",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.5",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["app", "tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["app"]
