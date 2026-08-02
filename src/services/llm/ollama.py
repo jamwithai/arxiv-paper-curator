@@ -1,24 +1,25 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 import httpx
+from langchain_ollama import ChatOllama
+
 from src.config import Settings
 from src.exceptions import OllamaConnectionError, OllamaException, OllamaTimeoutError
-from src.schemas.ollama import RAGResponse
-from src.services.ollama.prompts import RAGPromptBuilder, ResponseParser
+from src.services.llm.base import LLMClient
+from src.services.llm.prompts import RAGPromptBuilder, ResponseParser
 
 logger = logging.getLogger(__name__)
 
 
-class OllamaClient:
+class OllamaClient(LLMClient):
     """Client for interacting with Ollama local LLM service."""
 
     def __init__(self, settings: Settings):
         """Initialize Ollama client with settings."""
         self.base_url = settings.ollama_host
         self.timeout = httpx.Timeout(float(settings.ollama_timeout))
-        self.prompt_builder = RAGPromptBuilder()
         self.response_parser = ResponseParser()
 
     async def health_check(self) -> Dict[str, Any]:
@@ -196,6 +197,7 @@ class OllamaClient:
         chunks: List[Dict[str, Any]],
         model: str = "llama3.2",
         use_structured_output: bool = False,
+        domain: str = "ai",
     ) -> Dict[str, Any]:
         """
         Generate a RAG answer using retrieved chunks.
@@ -205,14 +207,16 @@ class OllamaClient:
             chunks: Retrieved document chunks with metadata
             model: Model to use for generation
             use_structured_output: Whether to use Ollama's structured output feature
+            domain: Corpus domain ("ai", "education", "accounting")
 
         Returns:
             Dictionary with answer, sources, confidence, and citations
         """
+        prompt_builder = RAGPromptBuilder(domain)
         try:
             if use_structured_output:
                 # Use structured output with Pydantic model
-                prompt_data = self.prompt_builder.create_structured_prompt(query, chunks)
+                prompt_data = prompt_builder.create_structured_prompt(query, chunks)
 
                 # Generate with structured format
                 response = await self.generate(
@@ -224,7 +228,7 @@ class OllamaClient:
                 )
             else:
                 # Fallback to plain text mode
-                prompt = self.prompt_builder.create_rag_prompt(query, chunks)
+                prompt = prompt_builder.create_rag_prompt(query, chunks)
 
                 # Generate without format restrictions
                 response = await self.generate(
@@ -244,19 +248,27 @@ class OllamaClient:
                     logger.debug(f"Parsed response: {parsed_response}")
                     return parsed_response
                 else:
-                    # For plain text response, build simple response structure
+                    # For plain text response, build simple response structure.
+                    # arXiv chunks are cited by PDF URL; bilingual domain chunks
+                    # (education/accounting) cite by document number/id instead.
                     sources = []
-                    seen_urls = set()
+                    seen = set()
                     for chunk in chunks:
                         arxiv_id = chunk.get("arxiv_id")
                         if arxiv_id:
                             arxiv_id_clean = arxiv_id.split("v")[0] if "v" in arxiv_id else arxiv_id
-                            pdf_url = f"https://arxiv.org/pdf/{arxiv_id_clean}.pdf"
-                            if pdf_url not in seen_urls:
-                                sources.append(pdf_url)
-                                seen_urls.add(pdf_url)
+                            source = f"https://arxiv.org/pdf/{arxiv_id_clean}.pdf"
+                        else:
+                            doc_ref = chunk.get("doc_number") or chunk.get("doc_id")
+                            source = f"doc:{doc_ref}" if doc_ref else None
+                        if source and source not in seen:
+                            sources.append(source)
+                            seen.add(source)
 
-                    citations = list(set(chunk.get("arxiv_id") for chunk in chunks if chunk.get("arxiv_id")))
+                    citation_ids = [
+                        chunk.get("arxiv_id") or chunk.get("doc_number") or chunk.get("doc_id") for chunk in chunks
+                    ]
+                    citations = list({c for c in citation_ids if c})
 
                     return {
                         "answer": answer_text,
@@ -276,6 +288,7 @@ class OllamaClient:
         query: str,
         chunks: List[Dict[str, Any]],
         model: str = "llama3.2",
+        domain: str = "ai",
     ):
         """
         Generate a streaming RAG answer using retrieved chunks.
@@ -284,13 +297,14 @@ class OllamaClient:
             query: User's question
             chunks: Retrieved document chunks with metadata
             model: Model to use for generation
+            domain: Corpus domain ("ai", "education", "accounting")
 
         Yields:
             Streaming response chunks with partial answers
         """
         try:
             # Create prompt for streaming (simpler than structured)
-            prompt = self.prompt_builder.create_rag_prompt(query, chunks)
+            prompt = RAGPromptBuilder(domain).create_rag_prompt(query, chunks)
 
             # Stream the response
             async for chunk in self.generate_stream(
@@ -304,3 +318,11 @@ class OllamaClient:
         except Exception as e:
             logger.error(f"Error generating streaming RAG answer: {e}")
             raise OllamaException(f"Failed to generate streaming RAG answer: {e}")
+
+    def get_langchain_model(self, model: str, temperature: float = 0.0) -> ChatOllama:
+        """Return a LangChain-compatible Ollama chat model for use in LangGraph nodes."""
+        return ChatOllama(
+            model=model,
+            temperature=temperature,
+            base_url=self.base_url,
+        )

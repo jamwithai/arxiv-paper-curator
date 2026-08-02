@@ -22,7 +22,7 @@ async def client():
         patch("src.services.opensearch.factory.make_opensearch_client") as mock_os,
         patch("src.services.arxiv.factory.make_arxiv_client") as mock_arxiv,
         patch("src.services.pdf_parser.factory.make_pdf_parser_service") as mock_pdf,
-        patch("src.services.ollama.client.OllamaClient") as mock_ollama,
+        patch("src.services.llm.factory.get_llm_client") as mock_llm,
         patch("src.repositories.paper.PaperRepository.get_by_arxiv_id") as mock_get_by_id,
     ):
         # Mock startup to do nothing
@@ -40,7 +40,7 @@ async def client():
         mock_os.return_value = AsyncMock()
         mock_arxiv.return_value = AsyncMock()
         mock_pdf.return_value = AsyncMock()
-        mock_ollama.return_value = AsyncMock()
+        mock_llm.return_value = AsyncMock()
 
         async with LifespanManager(app) as manager:
             async with AsyncClient(transport=ASGITransport(app=manager.app), base_url="http://test") as client:

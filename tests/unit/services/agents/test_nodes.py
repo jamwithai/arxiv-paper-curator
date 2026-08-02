@@ -2,10 +2,13 @@
 
 import pytest
 from unittest.mock import AsyncMock, Mock
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.runtime import Runtime
 
+from src.domain_profiles import get_domain_profile
 from src.services.agents.nodes import (
+    ainvoke_guardrail_step,
     ainvoke_retrieve_step,
     ainvoke_grade_documents_step,
     ainvoke_rewrite_query_step,
@@ -13,7 +16,8 @@ from src.services.agents.nodes import (
     ainvoke_out_of_scope_step,
     continue_after_guardrail,
 )
-from src.services.agents.nodes.utils import get_latest_query, get_latest_context
+from src.services.agents.nodes.utils import extract_sources_from_tool_messages, get_latest_query, get_latest_context
+from src.services.agents.nodes.rewrite_query_node import QueryRewriteOutput
 from src.services.agents.models import GuardrailScoring, GradeDocuments
 from src.services.agents.state import AgentState
 
@@ -48,6 +52,23 @@ class TestGuardrailNode:
         result = continue_after_guardrail(state, runtime)
 
         assert result == "out_of_scope"
+
+    @pytest.mark.asyncio
+    async def test_guardrail_prompt_is_scoped_to_active_domain(self, test_context, sample_human_message):
+        """Guardrail prompt must describe the active domain, not always arXiv (Stage 2)."""
+        test_context.domain = "education"
+        structured_llm = test_context.llm_client.get_langchain_model.return_value.with_structured_output.return_value
+        structured_llm.ainvoke = AsyncMock(return_value=GuardrailScoring(score=90, reason="On topic"))
+
+        state: AgentState = {"messages": [sample_human_message], "retrieval_attempts": 0}
+        runtime = Mock(spec=Runtime)
+        runtime.context = test_context
+
+        await ainvoke_guardrail_step(state, runtime)
+
+        sent_prompt = structured_llm.ainvoke.call_args[0][0]
+        assert get_domain_profile("education").label in sent_prompt
+        assert "arXiv" not in sent_prompt
 
 
 class TestRetrieveNode:
@@ -97,12 +118,11 @@ class TestGradeDocumentsNode:
     @pytest.mark.asyncio
     async def test_grade_documents_relevant(self, test_context, sample_human_message, sample_tool_message):
         """Test grading node with relevant documents."""
-        mock_llm = Mock()
-        mock_llm.ainvoke = AsyncMock(return_value=GradeDocuments(
+        structured_llm = test_context.llm_client.get_langchain_model.return_value.with_structured_output.return_value
+        structured_llm.ainvoke = AsyncMock(return_value=GradeDocuments(
             binary_score="yes",
             reasoning="Document discusses transformers which is relevant"
         ))
-        test_context.ollama_client.create_llm = Mock(return_value=mock_llm)
 
         state: AgentState = {
             "messages": [sample_human_message, sample_tool_message],
@@ -118,12 +138,11 @@ class TestGradeDocumentsNode:
     @pytest.mark.asyncio
     async def test_grade_documents_not_relevant(self, test_context, sample_human_message, sample_tool_message):
         """Test grading node with irrelevant documents."""
-        mock_llm = Mock()
-        mock_llm.ainvoke = AsyncMock(return_value=GradeDocuments(
+        structured_llm = test_context.llm_client.get_langchain_model.return_value.with_structured_output.return_value
+        structured_llm.ainvoke = AsyncMock(return_value=GradeDocuments(
             binary_score="no",
             reasoning="Document is not relevant to the query"
         ))
-        test_context.ollama_client.create_llm = Mock(return_value=mock_llm)
 
         state: AgentState = {
             "messages": [sample_human_message, sample_tool_message],
@@ -136,6 +155,49 @@ class TestGradeDocumentsNode:
 
         assert "grading_results" in result
 
+    @pytest.mark.asyncio
+    async def test_grade_documents_populates_relevant_sources_from_retriever_artifact(
+        self, test_context, sample_human_message
+    ):
+        """relevant_sources must come from the retriever tool's artifact (structured
+        Document metadata), not stay empty - see AgenticRAGService._extract_sources,
+        which is what /ask-agentic actually returns to the client."""
+        structured_llm = test_context.llm_client.get_langchain_model.return_value.with_structured_output.return_value
+        structured_llm.ainvoke = AsyncMock(return_value=GradeDocuments(binary_score="yes", reasoning="Relevant"))
+
+        retriever_message = ToolMessage(
+            content="[1. 1706.03762]\nTransformers use self-attention.",
+            tool_call_id="retrieve_1",
+            name="retrieve_papers",
+            artifact=[
+                Document(
+                    page_content="Transformers use self-attention.",
+                    metadata={
+                        "arxiv_id": "1706.03762",
+                        "title": "Attention Is All You Need",
+                        "authors": "Vaswani et al.",
+                        "score": 0.95,
+                        "source": "https://arxiv.org/pdf/1706.03762.pdf",
+                    },
+                )
+            ],
+        )
+
+        state: AgentState = {
+            "messages": [sample_human_message, retriever_message],
+            "retrieval_attempts": 1,
+        }
+        runtime = Mock(spec=Runtime)
+        runtime.context = test_context
+
+        result = await ainvoke_grade_documents_step(state, runtime)
+
+        assert "relevant_sources" in result
+        assert len(result["relevant_sources"]) == 1
+        source = result["relevant_sources"][0]
+        assert source.arxiv_id == "1706.03762"
+        assert source.url == "https://arxiv.org/pdf/1706.03762.pdf"
+
 
 class TestRewriteQueryNode:
     """Tests for query rewriting node."""
@@ -143,11 +205,11 @@ class TestRewriteQueryNode:
     @pytest.mark.asyncio
     async def test_rewrite_query_success(self, test_context, sample_human_message):
         """Test query rewriting with LLM."""
-        mock_llm = Mock()
-        mock_llm.ainvoke = AsyncMock(return_value=Mock(
-            content="What are the key concepts in transformer neural network architectures?"
+        structured_llm = test_context.llm_client.get_langchain_model.return_value.with_structured_output.return_value
+        structured_llm.ainvoke = AsyncMock(return_value=QueryRewriteOutput(
+            rewritten_query="What are the key concepts in transformer neural network architectures?",
+            reasoning="Expanded query with technical terms",
         ))
-        test_context.ollama_client.create_llm = Mock(return_value=mock_llm)
 
         state: AgentState = {
             "messages": [sample_human_message],
@@ -170,11 +232,10 @@ class TestGenerateAnswerNode:
     @pytest.mark.asyncio
     async def test_generate_answer_success(self, test_context, sample_human_message, sample_tool_message):
         """Test answer generation with context."""
-        mock_llm = Mock()
-        mock_llm.ainvoke = AsyncMock(return_value=Mock(
+        llm = test_context.llm_client.get_langchain_model.return_value
+        llm.ainvoke = AsyncMock(return_value=AIMessage(
             content="Based on the papers, transformers are neural network architectures."
         ))
-        test_context.ollama_client.create_llm = Mock(return_value=mock_llm)
 
         state: AgentState = {
             "messages": [sample_human_message, sample_tool_message],
@@ -189,19 +250,36 @@ class TestGenerateAnswerNode:
         assert isinstance(result["messages"][0], AIMessage)
         assert len(result["messages"][0].content) > 0
 
+    @pytest.mark.asyncio
+    async def test_generate_answer_prompt_is_scoped_to_active_domain(
+        self, test_context, sample_human_message, sample_tool_message
+    ):
+        """Answer prompt must cite sources per the active domain, not always arXiv IDs (Stage 2)."""
+        test_context.domain = "accounting"
+        llm = test_context.llm_client.get_langchain_model.return_value
+        llm.ainvoke = AsyncMock(return_value=AIMessage(content="Per IFRS 16..."))
+
+        state: AgentState = {
+            "messages": [sample_human_message, sample_tool_message],
+            "retrieval_attempts": 1,
+        }
+        runtime = Mock(spec=Runtime)
+        runtime.context = test_context
+
+        await ainvoke_generate_answer_step(state, runtime)
+
+        sent_prompt = llm.ainvoke.call_args[0][0]
+        profile = get_domain_profile("accounting")
+        assert profile.label in sent_prompt
+        assert profile.citation_style in sent_prompt
+
 
 class TestOutOfScopeNode:
     """Tests for out-of-scope handling node."""
 
     @pytest.mark.asyncio
     async def test_out_of_scope_response(self, test_context, sample_human_message):
-        """Test out-of-scope helpful rejection."""
-        mock_llm = Mock()
-        mock_llm.ainvoke = AsyncMock(return_value=Mock(
-            content="I'm designed to help with AI research papers."
-        ))
-        test_context.ollama_client.create_llm = Mock(return_value=mock_llm)
-
+        """Test out-of-scope helpful rejection (static response, no LLM call)."""
         state: AgentState = {
             "messages": [sample_human_message],
             "retrieval_attempts": 0,
@@ -213,6 +291,67 @@ class TestOutOfScopeNode:
 
         assert "messages" in result
         assert isinstance(result["messages"][0], AIMessage)
+
+    @pytest.mark.asyncio
+    async def test_out_of_scope_message_is_scoped_to_active_domain(self, test_context, sample_human_message):
+        """Rejection message must describe the active domain, not always arXiv/CS/AI/ML (Stage 2)."""
+        test_context.domain = "education"
+        state: AgentState = {"messages": [sample_human_message], "retrieval_attempts": 0}
+        runtime = Mock(spec=Runtime)
+        runtime.context = test_context
+
+        result = await ainvoke_out_of_scope_step(state, runtime)
+
+        message = result["messages"][0].content
+        assert get_domain_profile("education").label in message
+        assert "arXiv" not in message
+
+
+class TestExtractSourcesFromToolMessages:
+    """Tests for extract_sources_from_tool_messages (see nodes/utils.py)."""
+
+    def test_builds_source_items_from_retriever_artifact(self):
+        message = ToolMessage(
+            content="irrelevant for this test",
+            tool_call_id="call_1",
+            name="retrieve_papers",
+            artifact=[
+                Document(
+                    page_content="text",
+                    metadata={
+                        "arxiv_id": "1706.03762",
+                        "title": "Attention Is All You Need",
+                        "authors": "Vaswani et al., Shazeer et al.",
+                        "score": 0.95,
+                        "source": "https://arxiv.org/pdf/1706.03762.pdf",
+                    },
+                )
+            ],
+        )
+
+        sources = extract_sources_from_tool_messages([message])
+
+        assert len(sources) == 1
+        assert sources[0].arxiv_id == "1706.03762"
+        assert sources[0].title == "Attention Is All You Need"
+        assert sources[0].authors == ["Vaswani et al.", "Shazeer et al."]
+        assert sources[0].url == "https://arxiv.org/pdf/1706.03762.pdf"
+        assert sources[0].relevance_score == 0.95
+
+    def test_ignores_tool_messages_from_other_tools(self):
+        message = ToolMessage(content="some other tool result", tool_call_id="call_1", name="some_other_tool")
+
+        assert extract_sources_from_tool_messages([message]) == []
+
+    def test_returns_empty_list_when_no_tool_messages(self, sample_human_message, sample_ai_message):
+        assert extract_sources_from_tool_messages([sample_human_message, sample_ai_message]) == []
+
+    def test_handles_missing_artifact_gracefully(self):
+        """A retrieve_papers ToolMessage invoked outside ToolNode (e.g. directly via
+        {"query": ...}) has no .artifact - must not crash."""
+        message = ToolMessage(content="text only", tool_call_id="call_1", name="retrieve_papers")
+
+        assert extract_sources_from_tool_messages([message]) == []
 
 
 class TestNodeUtils:

@@ -9,7 +9,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.langfuse.client import LangfuseTracer
-from src.services.ollama.client import OllamaClient
+from src.services.llm.base import LLMClient
 from src.services.opensearch.client import OpenSearchClient
 
 from .config import GraphConfig
@@ -42,7 +42,7 @@ class AgenticRAGService:
     def __init__(
         self,
         opensearch_client: OpenSearchClient,
-        ollama_client: OllamaClient,
+        llm_client: LLMClient,
         embeddings_client: JinaEmbeddingsClient,
         langfuse_tracer: Optional[LangfuseTracer] = None,
         graph_config: Optional[GraphConfig] = None,
@@ -50,13 +50,13 @@ class AgenticRAGService:
         """Initialize agentic RAG service.
 
         :param opensearch_client: Client for document search
-        :param ollama_client: Client for LLM generation
+        :param llm_client: Client for LLM generation
         :param embeddings_client: Client for embeddings
         :param langfuse_tracer: Optional Langfuse tracer
         :param graph_config: Configuration for graph execution
         """
         self.opensearch = opensearch_client
-        self.ollama = ollama_client
+        self.llm = llm_client
         self.embeddings = embeddings_client
         self.langfuse_tracer = langfuse_tracer
         self.graph_config = graph_config or GraphConfig()
@@ -164,16 +164,19 @@ class AgenticRAGService:
         query: str,
         user_id: str = "api_user",
         model: Optional[str] = None,
+        domain: Optional[str] = None,
     ) -> dict:
         """Ask a question using agentic RAG.
 
         :param query: User question
         :param user_id: User identifier for tracing
         :param model: Optional model override
+        :param domain: Corpus domain to search ("ai", "education", "accounting"); defaults to the configured default domain
         :returns: Dictionary with answer, sources, reasoning steps, and metadata
         :raises ValueError: If query is empty
         """
         model_to_use = model or self.graph_config.model
+        domain_to_use = domain or self.opensearch.default_domain
 
         logger.info("=" * 80)
         logger.info("Starting Agentic RAG Request")
@@ -215,9 +218,9 @@ class AgenticRAGService:
                         session_id=f"session_{user_id}",
                     )
                     logger.debug(f"Trace created: {trace_obj}")
-                    return await self._run_workflow(query, model_to_use, user_id, trace_obj)
+                    return await self._run_workflow(query, model_to_use, domain_to_use, user_id, trace_obj)
             else:
-                return await self._run_workflow(query, model_to_use, user_id, None)
+                return await self._run_workflow(query, model_to_use, domain_to_use, user_id, None)
 
         try:
             return await _execute_with_trace()
@@ -226,7 +229,7 @@ class AgenticRAGService:
             logger.exception("Full traceback:")
             raise
 
-    async def _run_workflow(self, query: str, model_to_use: str, user_id: str, trace) -> dict:
+    async def _run_workflow(self, query: str, model_to_use: str, domain_to_use: str, user_id: str, trace) -> dict:
         """Execute the workflow with the given trace context."""
         try:
             start_time = time.time()
@@ -250,7 +253,7 @@ class AgenticRAGService:
 
             # Runtime context (dependencies)
             runtime_context = Context(
-                ollama_client=self.ollama,
+                llm_client=self.llm,
                 opensearch_client=self.opensearch,
                 embeddings_client=self.embeddings,
                 langfuse_tracer=self.langfuse_tracer,
@@ -261,6 +264,7 @@ class AgenticRAGService:
                 top_k=self.graph_config.top_k,
                 max_retrieval_attempts=self.graph_config.max_retrieval_attempts,
                 guardrail_threshold=self.graph_config.guardrail_threshold,
+                domain=domain_to_use,
             )
 
             # Create config with CallbackHandler if Langfuse is enabled (v3 SDK)

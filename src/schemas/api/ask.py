@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from src.config import default_llm_model, get_settings
+
 
 class AskRequest(BaseModel):
     """Request model for RAG question answering."""
@@ -9,8 +11,12 @@ class AskRequest(BaseModel):
     query: str = Field(..., description="User's question", min_length=1, max_length=1000)
     top_k: int = Field(3, description="Number of top chunks to retrieve", ge=1, le=10)
     use_hybrid: bool = Field(True, description="Use hybrid search (BM25 + vector)")
-    model: str = Field("llama3.2:1b", description="Ollama model to use for generation")
+    model: str = Field(
+        default_factory=lambda: default_llm_model(get_settings()),
+        description="LLM model to use for generation (provider is set via LLM_PROVIDER)",
+    )
     categories: Optional[List[str]] = Field(None, description="Filter by arXiv categories")
+    domain: str = Field("ai", description="Corpus domain to search: 'ai', 'education', or 'accounting'")
 
     class Config:
         json_schema_extra = {
@@ -18,8 +24,9 @@ class AskRequest(BaseModel):
                 "query": "What are transformers in machine learning?",
                 "top_k": 3,
                 "use_hybrid": True,
-                "model": "llama3.2:1b",
+                "model": "deepseek-v4-pro",
                 "categories": ["cs.AI", "cs.LG"],
+                "domain": "ai",
             }
         }
 
@@ -50,6 +57,7 @@ class AgenticAskResponse(AskResponse):
 
     reasoning_steps: List[str] = Field(..., description="Agent's decision-making steps")
     retrieval_attempts: int = Field(..., description="Number of document retrieval attempts")
+    rewritten_query: Optional[str] = Field(None, description="Query rewritten by the agent, if retrieval was retried")
     trace_id: Optional[str] = Field(None, description="Langfuse trace ID for feedback and debugging")
 
     class Config:

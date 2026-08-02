@@ -14,7 +14,15 @@ def mock_agentic_rag_service():
     service.ask = AsyncMock(return_value={
         "query": "What is machine learning?",
         "answer": "Machine learning is a subset of AI that enables systems to learn from data.",
-        "sources": ["https://arxiv.org/pdf/2301.00001.pdf"],
+        "sources": [
+            {
+                "arxiv_id": "2301.00001",
+                "title": "Some Paper",
+                "authors": [],
+                "url": "https://arxiv.org/pdf/2301.00001.pdf",
+                "relevance_score": 0.9,
+            }
+        ],
         "reasoning_steps": [
             "Validated query is about AI research",
             "Retrieved 3 relevant papers",
@@ -124,7 +132,15 @@ class TestAgenticAskEndpoint:
         mock_agentic_rag_service.ask = AsyncMock(return_value={
             "query": "What is transformer architecture?",
             "answer": "Transformers use self-attention mechanisms.",
-            "sources": ["https://arxiv.org/pdf/1706.03762.pdf"],
+            "sources": [
+                {
+                    "arxiv_id": "1706.03762",
+                    "title": "Attention Is All You Need",
+                    "authors": [],
+                    "url": "https://arxiv.org/pdf/1706.03762.pdf",
+                    "relevance_score": 0.95,
+                }
+            ],
             "reasoning_steps": ["Retrieved papers", "Generated answer"],
             "retrieval_attempts": 1,
             "rewritten_query": None,

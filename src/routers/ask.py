@@ -5,7 +5,7 @@ from typing import Dict, List
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from src.dependencies import CacheDep, EmbeddingsDep, LangfuseDep, OllamaDep, OpenSearchDep
+from src.dependencies import CacheDep, EmbeddingsDep, LangfuseDep, LLMDep, OpenSearchDep
 from src.schemas.api.ask import AskRequest, AskResponse
 from src.services.langfuse.tracer import RAGTracer
 
@@ -47,6 +47,7 @@ async def _prepare_chunks_and_sources(
             categories=request.categories,
             use_hybrid=request.use_hybrid and query_embedding is not None,
             min_score=0.0,
+            domain=request.domain,
         )
 
         # Extract essential data for LLM
@@ -56,12 +57,18 @@ async def _prepare_chunks_and_sources(
 
         for hit in search_results.get("hits", []):
             arxiv_id = hit.get("arxiv_id", "")
+            # arXiv chunks use "chunk_text"/"abstract"; bilingual domain chunks
+            # (education/accounting) use "chunk_text_vi"/"chunk_text_en" instead
+            # (see LEGAL_DOCS_CHUNKS_MAPPING). Resolve whichever is present.
+            chunk_text = (
+                hit.get("chunk_text") or hit.get("abstract") or hit.get("chunk_text_vi") or hit.get("chunk_text_en") or ""
+            )
 
             # Minimal chunk data for LLM
             chunks.append(
                 {
                     "arxiv_id": arxiv_id,
-                    "chunk_text": hit.get("chunk_text", hit.get("abstract", "")),
+                    "chunk_text": chunk_text,
                 }
             )
 
@@ -69,6 +76,8 @@ async def _prepare_chunks_and_sources(
                 arxiv_ids.append(arxiv_id)
                 arxiv_id_clean = arxiv_id.split("v")[0] if "v" in arxiv_id else arxiv_id
                 sources_set.add(f"https://arxiv.org/pdf/{arxiv_id_clean}.pdf")
+            elif hit.get("doc_id"):
+                sources_set.add(f"doc:{hit['doc_id']}")
 
         # End search span with essential metadata
         rag_tracer.end_search(search_span, chunks, arxiv_ids, search_results.get("total", 0))
@@ -81,7 +90,7 @@ async def ask_question(
     request: AskRequest,
     opensearch_client: OpenSearchDep,
     embeddings_service: EmbeddingsDep,
-    ollama_client: OllamaDep,
+    llm_client: LLMDep,
     langfuse_tracer: LangfuseDep,
     cache_client: CacheDep,
 ) -> AskResponse:
@@ -124,9 +133,9 @@ async def ask_question(
 
             # Build prompt
             with rag_tracer.trace_prompt_construction(trace, chunks) as prompt_span:
-                from src.services.ollama.prompts import RAGPromptBuilder
+                from src.services.llm.prompts import RAGPromptBuilder
 
-                prompt_builder = RAGPromptBuilder()
+                prompt_builder = RAGPromptBuilder(request.domain)
 
                 try:
                     prompt_data = prompt_builder.create_structured_prompt(request.query, chunks)
@@ -138,7 +147,9 @@ async def ask_question(
 
             # Generate answer
             with rag_tracer.trace_generation(trace, request.model, final_prompt) as gen_span:
-                rag_response = await ollama_client.generate_rag_answer(query=request.query, chunks=chunks, model=request.model)
+                rag_response = await llm_client.generate_rag_answer(
+                    query=request.query, chunks=chunks, model=request.model, domain=request.domain
+                )
                 answer = rag_response.get("answer", "Unable to generate answer")
                 rag_tracer.end_generation(gen_span, answer, request.model)
 
@@ -172,7 +183,7 @@ async def ask_question_stream(
     request: AskRequest,
     opensearch_client: OpenSearchDep,
     embeddings_service: EmbeddingsDep,
-    ollama_client: OllamaDep,
+    llm_client: LLMDep,
     langfuse_tracer: LangfuseDep,
     cache_client: CacheDep,
 ) -> StreamingResponse:
@@ -225,17 +236,17 @@ async def ask_question_stream(
 
                 # Build prompt
                 with rag_tracer.trace_prompt_construction(trace, chunks) as prompt_span:
-                    from src.services.ollama.prompts import RAGPromptBuilder
+                    from src.services.llm.prompts import RAGPromptBuilder
 
-                    prompt_builder = RAGPromptBuilder()
+                    prompt_builder = RAGPromptBuilder(request.domain)
                     final_prompt = prompt_builder.create_rag_prompt(request.query, chunks)
                     rag_tracer.end_prompt(prompt_span, final_prompt)
 
                 # Stream generation
                 with rag_tracer.trace_generation(trace, request.model, final_prompt) as gen_span:
                     full_response = ""
-                    async for chunk in ollama_client.generate_rag_answer_stream(
-                        query=request.query, chunks=chunks, model=request.model
+                    async for chunk in llm_client.generate_rag_answer_stream(
+                        query=request.query, chunks=chunks, model=request.model, domain=request.domain
                     ):
                         if chunk.get("response"):
                             text_chunk = chunk["response"]

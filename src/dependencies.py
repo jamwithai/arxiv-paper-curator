@@ -17,12 +17,14 @@ from src.services.arxiv.client import ArxivClient
 from src.services.cache.client import CacheClient
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.langfuse.client import LangfuseTracer
-from src.services.ollama.client import OllamaClient
+from src.services.llm.base import LLMClient
 from src.services.opensearch.client import OpenSearchClient
 from src.services.pdf_parser.parser import PDFParserService
 from src.services.telegram.bot import TelegramBot
 from src.services.agents.agentic_rag import AgenticRAGService
 from src.services.agents.factory import make_agentic_rag_service
+from src.services.drafting.factory import make_drafting_service
+from src.services.drafting.service import DraftingService
 
 
 @lru_cache
@@ -67,9 +69,9 @@ def get_embeddings_service(request: Request) -> JinaEmbeddingsClient:
     return request.app.state.embeddings_service
 
 
-def get_ollama_client(request: Request) -> OllamaClient:
-    """Get Ollama client from the request state."""
-    return request.app.state.ollama_client
+def get_llm_client(request: Request) -> LLMClient:
+    """Get LLM client from the request state."""
+    return request.app.state.llm_client
 
 
 def get_langfuse_tracer(request: Request) -> LangfuseTracer:
@@ -95,7 +97,7 @@ OpenSearchDep = Annotated[OpenSearchClient, Depends(get_opensearch_client)]
 ArxivDep = Annotated[ArxivClient, Depends(get_arxiv_client)]
 PDFParserDep = Annotated[PDFParserService, Depends(get_pdf_parser)]
 EmbeddingsDep = Annotated[JinaEmbeddingsClient, Depends(get_embeddings_service)]
-OllamaDep = Annotated[OllamaClient, Depends(get_ollama_client)]
+LLMDep = Annotated[LLMClient, Depends(get_llm_client)]
 LangfuseDep = Annotated[LangfuseTracer, Depends(get_langfuse_tracer)]
 CacheDep = Annotated[CacheClient | None, Depends(get_cache_client)]
 TelegramDep = Annotated[Optional[TelegramBot], Depends(get_telegram_service)]
@@ -103,19 +105,35 @@ TelegramDep = Annotated[Optional[TelegramBot], Depends(get_telegram_service)]
 
 def get_agentic_rag_service(
     opensearch: OpenSearchDep,
-    ollama: OllamaDep,
+    llm: LLMDep,
     embeddings: EmbeddingsDep,
     langfuse: LangfuseDep,
-    settings: Annotated[Settings, Depends(get_settings)],
 ) -> AgenticRAGService:
     """Get agentic RAG service."""
     return make_agentic_rag_service(
         opensearch_client=opensearch,
-        ollama_client=ollama,
+        llm_client=llm,
         embeddings_client=embeddings,
         langfuse_tracer=langfuse,
-        model=settings.ollama_model,
     )
 
 
 AgenticRAGDep = Annotated[AgenticRAGService, Depends(get_agentic_rag_service)]
+
+
+def get_drafting_service(
+    opensearch: OpenSearchDep,
+    llm: LLMDep,
+    embeddings: EmbeddingsDep,
+    settings: SettingsDep,
+) -> DraftingService:
+    """Get citation-grounded drafting service (Stage 3)."""
+    return make_drafting_service(
+        opensearch_client=opensearch,
+        llm_client=llm,
+        embeddings_client=embeddings,
+        settings=settings,
+    )
+
+
+DraftingDep = Annotated[DraftingService, Depends(get_drafting_service)]

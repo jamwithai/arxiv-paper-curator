@@ -2,7 +2,7 @@ from typing import Optional
 
 from src.services.embeddings.jina_client import JinaEmbeddingsClient
 from src.services.langfuse.client import LangfuseTracer
-from src.services.ollama.client import OllamaClient
+from src.services.llm.base import LLMClient
 from src.services.opensearch.client import OpenSearchClient
 
 from .agentic_rag import AgenticRAGService
@@ -11,7 +11,7 @@ from .config import GraphConfig
 
 def make_agentic_rag_service(
     opensearch_client: OpenSearchClient,
-    ollama_client: OllamaClient,
+    llm_client: LLMClient,
     embeddings_client: JinaEmbeddingsClient,
     langfuse_tracer: Optional[LangfuseTracer] = None,
     top_k: int = 3,
@@ -22,7 +22,7 @@ def make_agentic_rag_service(
 
     Args:
         opensearch_client: Client for document search
-        ollama_client: Client for LLM generation
+        llm_client: Client for LLM generation
         embeddings_client: Client for embeddings
         langfuse_tracer: Optional Langfuse tracer for observability
         top_k: Number of documents to retrieve (default: 3)
@@ -39,7 +39,7 @@ def make_agentic_rag_service(
 
     return AgenticRAGService(
         opensearch_client=opensearch_client,
-        ollama_client=ollama_client,
+        llm_client=llm_client,
         embeddings_client=embeddings_client,
         langfuse_tracer=langfuse_tracer,
         graph_config=graph_config,

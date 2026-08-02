@@ -255,6 +255,116 @@ class LangfuseTracer:
             yield None
 
     @contextmanager
+    def trace_rag_request(
+        self,
+        query: str,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Start a top-level span for a RAG request (v3 SDK).
+
+        This is the root observation for a single `/ask` request, under which
+        embedding, search, prompt construction, and generation spans are nested.
+
+        Args:
+            query: The user's question
+            user_id: Optional user identifier
+            session_id: Optional session identifier
+            metadata: Additional metadata to attach to the root span
+
+        Yields:
+            Root span object, or None if Langfuse is disabled
+        """
+        if not self.client:
+            yield None
+            return
+
+        span = None
+        try:
+            span = self.client.start_span(
+                name="rag_request",
+                input={"query": query},
+                metadata={**(metadata or {}), "user_id": user_id, "session_id": session_id},
+            )
+        except Exception as e:
+            logger.error(f"Error creating RAG request trace: {e}")
+            span = None
+
+        try:
+            yield span
+        finally:
+            if span:
+                span.end()
+
+    def create_span(
+        self,
+        trace: Optional[Any] = None,
+        name: str = "span",
+        input_data: Optional[Any] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Create a child span nested under `trace` (or a root span if `trace` is None).
+
+        Unlike `start_span`, this is not a context manager - call `end_span()`
+        explicitly when the operation completes.
+
+        Args:
+            trace: Parent span to nest under, or None for a root span
+            name: Name for this span
+            input_data: Input to this operation
+            metadata: Additional metadata
+
+        Returns:
+            Span object, or None if Langfuse is disabled or creation failed
+        """
+        if not self.client:
+            return None
+
+        try:
+            parent = trace if trace is not None else self.client
+            return parent.start_span(name=name, input=input_data, metadata=metadata or {})
+        except Exception as e:
+            logger.error(f"Error creating span '{name}': {e}")
+            return None
+
+    def end_span(
+        self,
+        span,
+        output: Optional[Any] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        level: Optional[str] = None,
+    ):
+        """
+        Update a span with final output/metadata and end it.
+
+        Args:
+            span: Span object from `create_span()`
+            output: Operation output
+            metadata: Additional metadata to attach
+            level: Log level (e.g., "ERROR", "WARNING") for error tracking
+        """
+        if not span:
+            return
+
+        try:
+            update_kwargs: Dict[str, Any] = {}
+            if output is not None:
+                update_kwargs["output"] = output
+            if metadata:
+                update_kwargs["metadata"] = metadata
+            if level:
+                update_kwargs["level"] = level
+
+            if update_kwargs:
+                span.update(**update_kwargs)
+            span.end()
+        except Exception as e:
+            logger.error(f"Error ending span: {e}")
+
+    @contextmanager
     def start_span(
         self,
         name: str,

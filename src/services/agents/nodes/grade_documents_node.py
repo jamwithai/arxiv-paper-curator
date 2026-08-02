@@ -8,7 +8,7 @@ from ..context import Context
 from ..models import GradeDocuments, GradingResult
 from ..prompts import GRADE_DOCUMENTS_PROMPT
 from ..state import AgentState
-from .utils import get_latest_context, get_latest_query
+from .utils import extract_sources_from_tool_messages, get_latest_context, get_latest_query
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,7 @@ async def ainvoke_grade_documents_step(
     # Get query and context
     question = get_latest_query(state["messages"])
     context = get_latest_context(state["messages"])
+    relevant_sources = extract_sources_from_tool_messages(state["messages"])
 
     # Extract document chunks from context for logging
     chunks_preview = []
@@ -76,7 +77,7 @@ async def ainvoke_grade_documents_step(
                 metadata={"execution_time_ms": execution_time},
             )
 
-        return {"routing_decision": "rewrite_query", "grading_results": []}
+        return {"routing_decision": "rewrite_query", "grading_results": [], "relevant_sources": relevant_sources}
 
     logger.debug(f"Grading context of length {len(context)} characters")
 
@@ -89,13 +90,15 @@ async def ainvoke_grade_documents_step(
         )
 
         # Get LLM from runtime context
-        llm = runtime.context.ollama_client.get_langchain_model(
+        llm = runtime.context.llm_client.get_langchain_model(
             model=runtime.context.model_name,
             temperature=0.0,
         )
 
         # Create structured output LLM for grading
-        structured_llm = llm.with_structured_output(GradeDocuments)
+        # method="json_mode": see guardrail_node.py for why (DeepSeek thinking-mode
+        # rejects the default function_calling/tool_choice structured-output method).
+        structured_llm = llm.with_structured_output(GradeDocuments, method="json_mode")
 
         # Invoke LLM grading
         logger.info("Invoking LLM for document grading")
@@ -150,4 +153,5 @@ async def ainvoke_grade_documents_step(
     return {
         "routing_decision": route,
         "grading_results": [grading_result],
+        "relevant_sources": relevant_sources,
     }

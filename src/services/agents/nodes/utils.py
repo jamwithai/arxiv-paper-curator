@@ -9,7 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 def extract_sources_from_tool_messages(messages: List) -> List[SourceItem]:
-    """Extract sources from tool messages in conversation.
+    """Extract sources from the retriever tool's artifact.
+
+    `retrieve_papers` (see `..tools.create_retriever_tool`) is a
+    `response_format="content_and_artifact"` tool: `msg.content` is the
+    LLM-facing text, and `msg.artifact` carries the retrieved `Document`
+    objects with structured metadata (arxiv_id, title, authors, url, score) -
+    that's what we build `SourceItem`s from, rather than parsing `msg.content`.
 
     :param messages: List of messages from graph state
     :returns: List of SourceItem objects
@@ -17,12 +23,18 @@ def extract_sources_from_tool_messages(messages: List) -> List[SourceItem]:
     sources = []
 
     for msg in messages:
-        if isinstance(msg, ToolMessage) and hasattr(msg, "name"):
-            if msg.name == "retrieve_papers":
-                # Parse tool response for sources
-                # This would need to parse the actual document metadata
-                # For now, return empty list
-                pass
+        if isinstance(msg, ToolMessage) and getattr(msg, "name", None) == "retrieve_papers":
+            for doc in getattr(msg, "artifact", None) or []:
+                metadata = doc.metadata
+                sources.append(
+                    SourceItem(
+                        arxiv_id=metadata.get("arxiv_id", ""),
+                        title=metadata.get("title", ""),
+                        authors=[a.strip() for a in metadata.get("authors", "").split(",") if a.strip()],
+                        url=metadata.get("source", ""),
+                        relevance_score=metadata.get("score", 0.0),
+                    )
+                )
 
     return sources
 

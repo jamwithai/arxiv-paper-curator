@@ -82,6 +82,18 @@ class OllamaTimeoutError(OllamaException):
     """Exception raised when Ollama service times out."""
 
 
+class DeepSeekException(LLMException):
+    """Exception raised for DeepSeek API errors."""
+
+
+class DeepSeekConnectionError(DeepSeekException):
+    """Exception raised when cannot connect to the DeepSeek API."""
+
+
+class DeepSeekTimeoutError(DeepSeekException):
+    """Exception raised when the DeepSeek API times out."""
+
+
 # General application exceptions
 class ConfigurationError(Exception):
     """Exception raised when configuration is invalid."""

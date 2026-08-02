@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage
 from langgraph.runtime import Runtime
 
 from ..context import Context
+from ..domain_config import get_domain_profile
 from ..state import AgentState
 from .utils import get_latest_query
 
@@ -27,17 +28,15 @@ async def ainvoke_out_of_scope_step(
     logger.info("NODE: out_of_scope")
 
     question = get_latest_query(state["messages"])
+    domain_profile = get_domain_profile(runtime.context.domain)
 
-    # Generate helpful response message
+    # Generate helpful response message, scoped to the active domain
     response_text = (
-        "I apologize, but I can only help with questions about academic research papers "
-        "in Computer Science, Artificial Intelligence, and Machine Learning from arXiv.\n\n"
+        f"I apologize, but I can only help with questions about {domain_profile.label}.\n\n"
         f"Your question: '{question}'\n\n"
-        "This appears to be outside my domain of expertise. For questions like this, you might want to try:\n"
-        "- General-purpose AI assistants for broad knowledge questions\n"
-        "- Domain-specific resources for topics outside CS/AI/ML\n"
-        "- Technical documentation if asking about specific software/tools\n\n"
-        "If you have a question about AI/ML research papers, I'd be happy to help!"
+        "This appears to be outside my domain of expertise. For questions like this, you might want to try "
+        f"{domain_profile.out_of_scope_suggestion}.\n\n"
+        "If you have a question within this corpus's domain, I'd be happy to help!"
     )
 
     logger.info("Responding with out-of-scope message")

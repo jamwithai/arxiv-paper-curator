@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage
 from langgraph.runtime import Runtime
 
 from ..context import Context
+from ..domain_config import get_domain_profile
 from ..prompts import GENERATE_ANSWER_PROMPT
 from ..state import AgentState
 from .utils import get_latest_context, get_latest_query
@@ -73,14 +74,17 @@ async def ainvoke_generate_answer_step(
             logger.warning(f"Failed to create span for generate_answer node: {e}")
 
     try:
-        # Create answer generation prompt from template
+        # Create answer generation prompt from template, scoped to the active domain
+        domain_profile = get_domain_profile(runtime.context.domain)
         answer_prompt = GENERATE_ANSWER_PROMPT.format(
+            domain_label=domain_profile.label,
+            citation_style=domain_profile.citation_style,
             context=context,
             question=question,
         )
 
         # Get LLM from runtime context
-        llm = runtime.context.ollama_client.get_langchain_model(
+        llm = runtime.context.llm_client.get_langchain_model(
             model=runtime.context.model_name,
             temperature=runtime.context.temperature,
         )

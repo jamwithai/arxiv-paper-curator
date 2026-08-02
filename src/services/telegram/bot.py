@@ -18,14 +18,14 @@ class TelegramBot:
         bot_token: str,
         opensearch_client,
         embeddings_client,
-        ollama_client,
+        llm_client,
         cache_client=None,
     ):
         """Initialize bot with required services."""
         self.bot_token = bot_token
         self.opensearch = opensearch_client
         self.embeddings = embeddings_client
-        self.ollama = ollama_client
+        self.llm = llm_client
         self.cache = cache_client
         self.application: Optional[Application] = None
 
@@ -146,7 +146,8 @@ class TelegramBot:
                     logger.warning(f"Cache lookup failed: {e}")
 
             # RAG pipeline
-            from src.services.ollama.prompts import RAGPromptBuilder
+            from src.config import default_llm_model, get_settings
+            from src.services.llm.prompts import RAGPromptBuilder
 
             # Get embeddings if hybrid
             query_embedding = None
@@ -188,8 +189,9 @@ class TelegramBot:
 
             # Generate answer
             prompt = RAGPromptBuilder().create_rag_prompt(query=query, chunks=chunks)
-            ollama_response = await self.ollama.generate(model="llama3.2:1b", prompt=prompt, stream=False)
-            answer = ollama_response.get("response", "") if ollama_response else ""
+            model = default_llm_model(get_settings())
+            llm_response = await self.llm.generate(model=model, prompt=prompt, stream=False)
+            answer = llm_response.get("response", "") if llm_response else ""
 
             # Build response
             response = AskResponse(

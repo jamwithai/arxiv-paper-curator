@@ -111,7 +111,7 @@ class TextChunker:
             if words:
                 return [
                     TextChunk(
-                        text=self._reconstruct_text(words, text),
+                        text=self._reconstruct_text(words),
                         metadata=ChunkMetadata(
                             chunk_index=0,
                             start_char=0,

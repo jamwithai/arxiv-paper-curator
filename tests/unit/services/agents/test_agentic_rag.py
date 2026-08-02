@@ -10,7 +10,7 @@ from src.services.agents.models import GuardrailScoring
 
 
 @pytest.fixture
-def test_service(mock_opensearch_client, mock_ollama_client, mock_jina_embeddings_client):
+def test_service(mock_opensearch_client, mock_llm_client, mock_jina_embeddings_client):
     """Create AgenticRAGService with mocked dependencies."""
     config = GraphConfig(
         model="llama3.2:1b",
@@ -22,7 +22,7 @@ def test_service(mock_opensearch_client, mock_ollama_client, mock_jina_embedding
     )
     return AgenticRAGService(
         opensearch_client=mock_opensearch_client,
-        ollama_client=mock_ollama_client,
+        llm_client=mock_llm_client,
         embeddings_client=mock_jina_embeddings_client,
         langfuse_tracer=None,
         graph_config=config,
@@ -35,7 +35,7 @@ class TestAgenticRAGServiceInitialization:
     def test_service_initialization(self, test_service):
         """Test that service initializes correctly."""
         assert test_service.opensearch is not None
-        assert test_service.ollama is not None
+        assert test_service.llm is not None
         assert test_service.embeddings is not None
         assert test_service.graph is not None
         assert test_service.graph_config is not None

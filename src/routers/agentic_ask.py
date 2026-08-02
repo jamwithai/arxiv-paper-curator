@@ -39,16 +39,23 @@ async def ask_agentic(
     try:
         result = await agentic_rag.ask(
             query=request.query,
+            model=request.model,
+            domain=request.domain,
         )
+
+        # AskResponse.sources is List[str] (URLs); agentic_rag.ask() returns richer
+        # SourceItem dicts (see AgenticRAGService._extract_sources), so flatten to URLs.
+        source_urls = [s["url"] for s in result.get("sources", []) if s.get("url")]
 
         return AgenticAskResponse(
             query=result["query"],
             answer=result["answer"],
-            sources=result.get("sources", []),
+            sources=source_urls,
             chunks_used=request.top_k,
             search_mode="hybrid" if request.use_hybrid else "bm25",
             reasoning_steps=result.get("reasoning_steps", []),
             retrieval_attempts=result.get("retrieval_attempts", 0),
+            rewritten_query=result.get("rewritten_query"),
             trace_id=result.get("trace_id"),
         )
 

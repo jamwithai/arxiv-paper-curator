@@ -51,7 +51,8 @@ services:
       - rag-network
 
   opensearch:
-    image: opensearchproject/opensearch:2.19.0
+    build: ./docker/opensearch
+    image: rag-opensearch-icu:2.19.0
     container_name: rag-opensearch
     environment:
       - discovery.type=single-node
@@ -134,9 +135,12 @@ services:
     networks:
       - rag-network
 
+  # Optional: local LLM, only needed when LLM_PROVIDER=ollama.
+  # Not started by default; run with `docker compose --profile local-llm up -d`.
   ollama:
     image: ollama/ollama:0.11.2
     container_name: rag-ollama
+    profiles: ["local-llm"]
     ports:
       - "11434:11434"
     volumes:

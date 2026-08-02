@@ -14,13 +14,13 @@ class TestTelegramBot:
             bot_token="test_token",
             opensearch_client=MagicMock(),
             embeddings_client=MagicMock(),
-            ollama_client=MagicMock(),
+            llm_client=MagicMock(),
         )
 
         assert bot.bot_token == "test_token"
         assert bot.opensearch is not None
         assert bot.embeddings is not None
-        assert bot.ollama is not None
+        assert bot.llm is not None
 
 
 class TestTelegramSettings:
@@ -50,7 +50,7 @@ class TestTelegramFactory:
         bot = make_telegram_service(
             opensearch_client=MagicMock(),
             embeddings_client=MagicMock(),
-            ollama_client=MagicMock(),
+            llm_client=MagicMock(),
         )
         assert bot is None
 
@@ -62,7 +62,7 @@ class TestTelegramFactory:
         bot = make_telegram_service(
             opensearch_client=MagicMock(),
             embeddings_client=MagicMock(),
-            ollama_client=MagicMock(),
+            llm_client=MagicMock(),
         )
         assert bot is None
 
@@ -74,7 +74,7 @@ class TestTelegramFactory:
         bot = make_telegram_service(
             opensearch_client=MagicMock(),
             embeddings_client=MagicMock(),
-            ollama_client=MagicMock(),
+            llm_client=MagicMock(),
         )
         assert bot is not None
         assert bot.bot_token == "test_token"

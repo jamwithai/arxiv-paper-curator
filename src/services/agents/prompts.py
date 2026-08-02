@@ -21,7 +21,7 @@ Here is the initial question:
 {question}
 
 Formulate an improved question that will retrieve more relevant documents.
-Provide only the improved question without any preamble or explanation."""
+Respond in JSON format with 'rewritten_query' and 'reasoning' fields."""
 
 # System message for query generation/response
 SYSTEM_MESSAGE = """You are an AI assistant specializing in academic research papers from arXiv.
@@ -75,20 +75,22 @@ Explain that this question is outside your domain of expertise (arXiv research p
 Answer:"""
 
 # Guardrail validation prompt (used in guardrail_node)
-GUARDRAIL_PROMPT = """You are a guardrail evaluator assessing whether a user query is within the scope of academic research papers from arXiv in Computer Science, AI, and Machine Learning.
+# {domain_label} is filled in per-request from DOMAIN_PROFILES (see domain_config.py)
+# so the guardrail doesn't reject valid education/accounting queries as "not arXiv".
+GUARDRAIL_PROMPT = """You are a guardrail evaluator assessing whether a user query is within the scope of {domain_label}.
 
 User Query: {question}
 
-Evaluate whether this query is:
-- About CS/AI/ML research topics (neural networks, algorithms, models, architectures, techniques, etc.)
-- Requires academic paper knowledge to answer
-- Within the domain of Computer Science research
+Evaluate whether this query:
+- Is about topics covered by this corpus
+- Requires knowledge from this corpus to answer
+- Is within the domain described above
 
 Assign a relevance score (0-100):
-- 80-100: Clearly about CS/AI/ML research (e.g., "What are transformer architectures?", "How does BERT work?")
-- 60-79: Potentially research-related but unclear (e.g., "Tell me about attention mechanisms")
-- 40-59: Borderline or ambiguous (e.g., "What is machine learning?")
-- 0-39: NOT about research papers (e.g., "What is a dog?", "Hello", "What is 2+2?")
+- 80-100: Clearly within this corpus's domain
+- 60-79: Potentially relevant but unclear
+- 40-59: Borderline or ambiguous
+- 0-39: NOT related to this corpus's domain (e.g., "Hello", "What is 2+2?", unrelated small talk)
 
 Provide:
 1. A score between 0 and 100
@@ -97,21 +99,21 @@ Provide:
 Respond in JSON format with 'score' (integer 0-100) and 'reason' (string) fields."""
 
 # Answer generation prompt (used in generate_answer_node)
-GENERATE_ANSWER_PROMPT = """You are an AI research assistant specializing in academic papers from arXiv in Computer Science, AI, and Machine Learning.
+GENERATE_ANSWER_PROMPT = """You are an AI research assistant specializing in {domain_label}.
 
-Your task is to answer the user's question using ONLY the information from the retrieved research papers provided below.
+Your task is to answer the user's question using ONLY the information from the retrieved documents provided below.
 
-Retrieved Research Papers:
+Retrieved Documents:
 {context}
 
 User Question: {question}
 
 Instructions:
-- Provide a comprehensive, accurate answer based ONLY on the retrieved papers
-- Cite specific papers when making claims (use paper titles or arxiv IDs)
-- If the papers don't contain enough information to fully answer the question, acknowledge this
+- Provide a comprehensive, accurate answer based ONLY on the retrieved documents
+- Cite specific sources when making claims, using {citation_style}
+- If the documents don't contain enough information to fully answer the question, acknowledge this
 - Structure your answer clearly and professionally
-- Focus on the key insights and findings from the papers
-- Do NOT make up information or cite papers not in the retrieved context
+- Focus on the key insights and findings from the documents
+- Do NOT make up information or cite documents not in the retrieved context
 
 Answer:"""

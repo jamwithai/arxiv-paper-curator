@@ -32,6 +32,16 @@ def test_settings_opensearch_defaults():
     assert settings.opensearch.index_name == "arxiv-papers"
 
 
+def test_settings_opensearch_domain_indices_defaults():
+    """Test multi-domain index routing configuration (Stage 2)."""
+    settings = Settings()
+
+    assert settings.opensearch.default_domain == "ai"
+    assert settings.opensearch.domain_indices["ai"] == "arxiv-papers-chunks"
+    assert settings.opensearch.domain_indices["education"] == "corpus-education-chunks"
+    assert settings.opensearch.domain_indices["accounting"] == "corpus-accounting-chunks"
+
+
 def test_settings_ollama_defaults():
     """Test Ollama default configuration."""
     settings = Settings()

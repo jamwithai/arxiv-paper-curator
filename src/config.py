@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -104,6 +104,16 @@ class OpenSearchSettings(BaseConfigSettings):
     rrf_pipeline_name: str = "hybrid-rrf-pipeline"
     hybrid_search_size_multiplier: int = 2  # Get k*multiplier for better recall
 
+    # Multi-domain corpus routing (Stage 2): each domain gets its own index,
+    # since the AI corpus (English/arXiv) and the education/accounting corpora
+    # (bilingual Vietnamese + English) need different analyzers and mappings.
+    default_domain: str = "ai"
+    domain_indices: Dict[str, str] = {
+        "ai": "arxiv-papers-chunks",
+        "education": "corpus-education-chunks",
+        "accounting": "corpus-accounting-chunks",
+    }
+
 
 class LangfuseSettings(BaseConfigSettings):
     model_config = SettingsConfigDict(
@@ -174,6 +184,16 @@ class Settings(BaseConfigSettings):
     ollama_model: str = "llama3.2:1b"
     ollama_timeout: int = 300
 
+    # LLM provider selection: "deepseek" or "ollama"
+    llm_provider: Literal["deepseek", "ollama"] = "deepseek"
+
+    # DeepSeek API configuration
+    deepseek_api_key: str = ""
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_timeout: int = 300
+    deepseek_model_fast: str = "deepseek-v4-flash"
+    deepseek_model_strong: str = "deepseek-v4-pro"
+
     # Jina AI embeddings configuration
     jina_api_key: str = ""
 
@@ -195,3 +215,8 @@ class Settings(BaseConfigSettings):
 
 def get_settings() -> Settings:
     return Settings()
+
+
+def default_llm_model(settings: Settings) -> str:
+    """Default chat model for the currently configured LLM provider."""
+    return settings.deepseek_model_strong if settings.llm_provider == "deepseek" else settings.ollama_model

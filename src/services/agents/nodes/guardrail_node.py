@@ -5,6 +5,7 @@ from typing import Dict, Literal
 from langgraph.runtime import Runtime
 
 from ..context import Context
+from ..domain_config import get_domain_profile
 from ..models import GuardrailScoring
 from ..prompts import GUARDRAIL_PROMPT
 from ..state import AgentState
@@ -77,17 +78,22 @@ async def ainvoke_guardrail_step(
             logger.warning(f"Failed to create span for guardrail validation: {e}")
 
     try:
-        # Create guardrail prompt from template
-        guardrail_prompt = GUARDRAIL_PROMPT.format(question=query)
+        # Create guardrail prompt from template, scoped to the active domain
+        domain_profile = get_domain_profile(runtime.context.domain)
+        guardrail_prompt = GUARDRAIL_PROMPT.format(domain_label=domain_profile.label, question=query)
 
         # Get LLM from runtime context
-        llm = runtime.context.ollama_client.get_langchain_model(
+        llm = runtime.context.llm_client.get_langchain_model(
             model=runtime.context.model_name,
             temperature=0.0,
         )
 
         # Create structured output LLM for guardrail scoring
-        structured_llm = llm.with_structured_output(GuardrailScoring)
+        # method="json_mode": DeepSeek's default structured-output method
+        # (function_calling / tool_choice) is rejected in "thinking mode" with
+        # "Thinking mode does not support this tool_choice" - json_mode avoids
+        # tool calls entirely and works with both DeepSeek and Ollama.
+        structured_llm = llm.with_structured_output(GuardrailScoring, method="json_mode")
 
         # Invoke LLM for guardrail evaluation
         logger.info("Invoking LLM for guardrail validation")
